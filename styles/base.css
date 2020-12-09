@@ -1,0 +1,76 @@
+@font-face {
+    font-family: 'LibreBaskerville';
+    src: url("../fonts/librebaskerville/LibreBaskerville-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: 'Raleway';
+    src: url("../fonts/raleway/Raleway-Bold.ttf") format("truetype");
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: auto;
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+}
+
+/* added by script */
+.top-nav-scrolled {
+    height: 41px;
+    border-bottom: 1px solid #ececec;
+}
+
+.top-nav-left {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.top-nav-left > a > img {
+    margin-top: 2px; /* too-lazy-to-edit-image-magic-number */
+    margin-left: 10px;
+}
+
+.top-nav-left > .top-nav-button {
+    margin-left: 10px;
+    font-size: 16px;
+}
+
+.top-nav-button,
+.top-nav-button:visited {
+    margin-right: 20px;
+    font-family: "Raleway", sans-serif;
+    font-size: 14px;
+    text-decoration: none;
+    color: black;
+}
+.top-nav-button:hover {
+    text-decoration: underline;
+    color: #707070;
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+
+.page {
+    margin-top: 40px;
+    margin-bottom: 60px;
+}

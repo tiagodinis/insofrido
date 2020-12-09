@@ -1,0 +1,39 @@
+.heading-title {
+    max-width: 680px;
+    padding: 70px 0px 0px 30px;
+    margin: 0 auto;
+    font-family: "Raleway", sans-serif;
+    font-size: 40px;
+    line-height: 40px;
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+
+.centered-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 680px;
+    min-width: 580px;
+    margin: 0 auto;
+    padding: 0 30px;
+}
+
+.paragraph {
+    margin-top: 2em;
+    font-family: "LibreBaskerville", serif;
+    font-size: 16px;
+    line-height: 1.8em;
+}
+
+@media only screen and (max-width: 696px) {
+    .heading-title {
+        padding: 70px 0px 0px 30px;
+        font-size: 31px;
+        line-height: 31px;
+    }
+
+    .paragraph {
+        font-size: 14px;
+        line-height: 2em;
+    }
+}
