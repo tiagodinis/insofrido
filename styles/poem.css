@@ -9,13 +9,26 @@
 
 /* ---------------------------------------------------------------------------------------------- */
 
-.centered-content {
+.single-column {
     display: flex;
     flex-direction: column;
     max-width: 680px;
     min-width: 580px;
     margin: 0 auto;
     padding: 0 30px;
+}
+
+.double-column {
+    display: flex;
+    flex-direction: row;
+    max-width: 680px;
+    min-width: 580px;
+    margin: 0 auto;
+    padding: 0 30px;
+}
+
+.column {
+    padding-right: 120px;
 }
 
 .paragraph {
