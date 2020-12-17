@@ -67,14 +67,9 @@ html {
     text-decoration: underline;
     color: #707070;
 }
-/* o atum não enjoa como camarão e não fica seco como as outras carnes */
+
 /* ---------------------------------------------------------------------------------------------- */
 
 .page {
-    padding-top: 40px;
-    padding-bottom: 30px;
-    /* margin-top: 40px;
-    margin-bottom: 60px; */
-    /* background-color: blue; */
-
+    padding: 40px 0;
 }
