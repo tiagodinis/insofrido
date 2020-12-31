@@ -8,22 +8,22 @@ window.addEventListener("scroll", debounce(updateTopNav, 5));
 
 // -------------------------------------------------------------------------------------------------
 const song = document.getElementById("song");
-const button = document.getElementById("play-button");
+const playButton = document.getElementById("play-button");
 var isPlaying = false;
 
 function toggleSong() {
 	if (isPlaying){
 		song.pause();
-		button.src = "../images/play.svg"
+		playButton.src = "../images/play.svg"
 	}
 	else{
 		song.play();
-		button.src = "../images/pause.svg"
+		playButton.src = "../images/pause.svg"
 	}
 	isPlaying = !isPlaying;
 }
 
-document.getElementById("play-button").addEventListener("click", toggleSong, false);
+if (playButton) playButton.addEventListener("click", toggleSong, false);
 
 // -- Utils ----------------------------------------------------------------------------------------
 
