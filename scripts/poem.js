@@ -1,10 +1,29 @@
 const topNav = document.getElementsByClassName("top-nav")[0];
 
-function updateTopNav () {
+function updateTopNav() {
 	enableOnElementIf("top-nav-scrolled", topNav, window.pageYOffset >= 50)
 }
 
 window.addEventListener("scroll", debounce(updateTopNav, 5));
+
+// -------------------------------------------------------------------------------------------------
+const song = document.getElementById("song");
+const button = document.getElementById("play-button");
+var isPlaying = false;
+
+function toggleSong() {
+	if (isPlaying){
+		song.pause();
+		button.src = "../images/play.svg"
+	}
+	else{
+		song.play();
+		button.src = "../images/pause.svg"
+	}
+	isPlaying = !isPlaying;
+}
+
+document.getElementById("play-button").addEventListener("click", toggleSong, false);
 
 // -- Utils ----------------------------------------------------------------------------------------
 
