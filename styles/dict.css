@@ -1,0 +1,65 @@
+.page {
+    width: 300px;
+    position: fixed;
+    top: 43%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.word {
+    font-family: "Raleway", sans-serif;
+    font-size: 58px;
+}
+
+.center-block {
+    font-family: "LibreBaskerville", serif;
+    font-size: 16px;
+}
+
+.subtitle {
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ececec;
+}
+
+.word-type {
+    padding-left: 10px;
+    font-family: "Raleway", sans-serif;
+}
+
+.dict-list {
+    padding-top: 9px;
+    line-height: 1.6em;
+}
+
+/*-- Responsiveness ------------------------------------------------------------------------------*/
+
+@media only screen and (min-width: 680px) {
+    .page {
+        width: 450px;
+    }
+    
+    .word {
+        font-size: 87px;
+    }
+
+    .center-block {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        padding-bottom: 23px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #ececec;
+    }
+
+    .word-type {
+        padding-left: 15px;
+    }
+
+    .dict-list {
+        padding-top: 13.5px;
+    }
+}
