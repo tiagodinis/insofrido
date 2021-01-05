@@ -5,11 +5,11 @@ var isPlaying = false;
 function toggleSong() {
 	if (isPlaying){
 		song.pause();
-		playButton.src = "../images/play.svg"
+		playButton.src = "images/play.svg"
 	}
 	else{
 		song.play();
-		playButton.src = "../images/pause.svg"
+		playButton.src = "images/pause.svg"
 	}
 	isPlaying = !isPlaying;
 }
