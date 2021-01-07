@@ -6,6 +6,25 @@
     transform: translate(-50%, -50%);
 }
 
+.dict-nav {
+    display: flex;
+    padding-left: 10px;
+    padding-top: 16px;
+    font-family: "Raleway", sans-serif;
+    font-size: 16px;
+    justify-content: center;
+}
+
+.dict-nav > a,
+.dict-nav > a:visited {
+    padding: 5px;
+    color: black;
+}
+.dict-nav > a:hover {
+    text-decoration: underline;
+    color: #707070;
+}
+
 .word {
     font-family: "Raleway", sans-serif;
     font-size: 58px;
@@ -41,6 +60,10 @@
         width: 450px;
     }
     
+    .dict-nav {
+        font-size: 24px;
+    }
+
     .word {
         font-size: 87px;
     }
