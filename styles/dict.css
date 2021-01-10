@@ -1,11 +1,3 @@
-.page {
-    width: 300px;
-    position: fixed;
-    top: 43%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
 .dict-nav {
     display: flex;
     padding-left: 10px;
@@ -13,6 +5,7 @@
     font-family: "Raleway", sans-serif;
     font-size: 16px;
     justify-content: center;
+    opacity: 0%;
 }
 
 .dict-nav > a,
@@ -25,9 +18,24 @@
     color: #707070;
 }
 
+.page {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+}
+
 .word {
     font-family: "Raleway", sans-serif;
     font-size: 58px;
+    transform: translate(28px);
+}
+
+.syllable-dot {
+    margin: -7.345px;
+    color: black;
+    opacity: 0;
 }
 
 .center-block {
@@ -38,19 +46,118 @@
 .subtitle {
     display: flex;
     flex-direction: row;
-    padding-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #ececec;
+}
+
+.word-phonetic {
+    opacity: 0;
 }
 
 .word-type {
     padding-left: 10px;
     font-family: "Raleway", sans-serif;
+    opacity: 0;
+}
+
+.separator {
+    border-bottom: 1px solid #dadada;
+    width: 0%;
 }
 
 .dict-list {
     padding-top: 9px;
-    line-height: 1.6em;
+    line-height: 1.8em;
+}
+
+.word-meaning1 {
+    opacity: 0;
+}
+
+.word-meaning2 {
+    opacity: 0;
+}
+
+.word-meaning3 {
+    opacity: 0;
+}
+
+/*-- Script classes  -----------------------------------------------------------------------------*/
+
+.interactable:hover {
+    cursor: pointer;
+}
+
+.decenter-word { animation: decenter-word 0.5s ease-in-out forwards 1; }
+.center-word { animation: center-word 0.5s ease-in 0.55s 1; }
+
+.expand-syllables { animation: expand-syllables 0.5s ease-out forwards 0.55s 1; }
+.contract-syllables { animation: contract-syllables 0.5s ease-in 1; }
+
+.show-phonetic { animation: fade-in 0.8s ease-out forwards 1.1s 1; }
+.hide-phonetic { animation: fade-out 1s ease-in 1; }
+
+.show-type { animation: fade-in 0.7s ease-out forwards 1.65s 1; }
+.hide-type { animation: fade-out 1s ease-in 1; }
+
+.draw-separator { animation: stretch-right 0.55s ease-in-out forwards 1.95s 1; }
+.clear-separator { animation: stretch-left 1s ease-out 1; }
+
+.show-word-meaning1 { animation: fade-in 1.3s ease-in forwards 2.5s 1; }
+.hide-word-meaning1 { animation: fade-out 1s ease-in 1; }
+
+.show-word-meaning2 { animation: fade-in 1.3s ease-in forwards 2.8s 1; }
+.hide-word-meaning2 { animation: fade-out 1s ease-in 1; }
+
+.show-word-meaning3 { animation: fade-in 1.3s ease-in forwards 3.1s 1; }
+.hide-word-meaning3 { animation: fade-out 1s ease-in 1; }
+
+.show-reset-button { animation: fade-in 0.55s ease-in forwards 4.5s 1; }
+.hide-reset-button { animation: fade-out 1s ease-in 1; }
+
+.show-dict-nav { animation: fade-in 0.55s ease-in forwards 4s 1; }
+.hide-dict-nav { animation: fade-out 1s ease-in 1; }
+
+/*-- Animations  ---------------------------------------------------------------------------------*/
+.decenter-word { animation: decenter-word 0.5s ease-in-out forwards 1; }
+@keyframes decenter-word {
+    0% { transform: translate(28px); }
+    100% { transform: translate(0px); }
+}
+
+@keyframes expand-syllables {
+    0% { margin: -7.345px; opacity: 0%; }
+    100% { margin: 0; opacity: 100%; }
+}
+
+@keyframes fade-in {
+    0% { opacity: 0%; }
+    100% { opacity: 100%; }
+}
+
+@keyframes stretch-right {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+/* Done as a way to "restart" the animation https://css-tricks.com/restart-css-animation/ */
+@keyframes center-word {
+    0% { transform: translate(0px); }
+    100% { transform: translate(28px); }
+}
+
+@keyframes contract-syllables {
+    0% { margin: 0; opacity: 100%; }
+    100% { margin: -7.345px; opacity: 0%; }
+}
+
+@keyframes fade-out {
+    0% { opacity: 100%; }
+    100% { opacity: 0%; }
+}
+
+@keyframes stretch-left {
+    0% { width: 100%; }
+    100% { width: 0%; }
 }
 
 /*-- Responsiveness ------------------------------------------------------------------------------*/
@@ -59,13 +166,31 @@
     .page {
         width: 450px;
     }
-    
+
     .dict-nav {
         font-size: 24px;
     }
 
     .word {
         font-size: 87px;
+        transform: translate(42px);
+    }
+
+    .decenter-word-large { animation: decenter-word-large 0.5s ease-in-out forwards 1; }
+    @keyframes decenter-word-large {
+        0% { transform: translate(42px); }
+        100% { transform: translate(0px); }
+    }
+
+    .syllable-dot {
+        margin: -11.0175px;
+    }
+
+    .expand-syllables-large { animation: expand-syllables-large 0.5s ease-out forwards 0.55s 1; }
+
+    @keyframes expand-syllables-large {
+        0% { margin: -11.0175px; opacity: 0%; }
+        100% { margin: 0; opacity: 100%; }
     }
 
     .center-block {
@@ -73,9 +198,7 @@
     }
 
     .subtitle {
-        padding-bottom: 23px;
         padding-bottom: 15px;
-        border-bottom: 1px solid #ececec;
     }
 
     .word-type {

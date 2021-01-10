@@ -51,11 +51,7 @@ html {
     text-decoration: none;
     color: black;
 }
-.top-nav-left > a:hover
-{
-    text-decoration: underline;
-    color: #707070;
-}
+
 
 .top-nav-left > a > img {
     margin-top: 12px;
@@ -68,7 +64,6 @@ html {
     font-size: 16px;
     font-family: "Raleway", sans-serif;
 }
-
 
 /* ---------------------------------------------------------------------------------------------- */
 

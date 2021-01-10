@@ -32,12 +32,8 @@
 }
 
 @keyframes pulse {
-    0% {
-        opacity: 0%;
-    }
-    100% {
-        opacity: 80%;
-    }
+    0% { opacity: 0%; }
+    100% { opacity: 80%; }
 }
 
 #play-button {

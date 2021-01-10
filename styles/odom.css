@@ -1,0 +1,89 @@
+.screen-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "LibreBaskerville", serif;
+    font-size: 30px;
+}
+
+.text-line {
+    width: 27175px;
+    opacity: 30%;
+}
+
+@keyframes scroll {
+    0% { transform: translateX(0px); }
+    100% { transform: translate(-13581px); }
+}
+
+.circle-background {
+    position: absolute;
+    width: 900px;
+    height: 900px;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    background: radial-gradient(circle closest-side, white 34%, rgba(255, 255, 255, 0));
+}
+
+.letter-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 30px;
+}
+
+.letter {
+    position: absolute;
+    font-family: "Raleway", sans-serif;
+}
+
+@keyframes rotate {
+    0% { transform: translate(-50%, -50%) rotateZ(0deg) translate(-150px) rotateZ(-0deg) }
+    100% { transform: translate(-50%, -50%) rotateZ(360deg) translate(-150px) rotateZ(-360deg) }
+}
+
+.short-poem {
+    position: absolute;
+    transform: translate(0%, -50%);
+    top: 50%;
+    width: 100%;
+    font-size: 12px;
+    text-align: center;
+}
+
+/*-- Responsiveness ------------------------------------------------------------------------------*/
+
+@media only screen and (min-width: 680px) and (min-height: 680px) {
+    .screen-container {
+        font-size: 60px;
+    }
+    
+    .text-line {
+        width: 54350px;
+    }
+
+    @keyframes scroll-large {
+        0% { transform: translateX(0px); }
+        100% { transform: translate(-27162px); }
+    }
+
+    .circle-background {
+        width: 1800px;
+        height: 1800px;
+    }
+    
+    .letter-circle {
+        font-size: 60px;
+    }
+
+    @keyframes rotate-large {
+        0% { transform: translate(-50%, -50%) rotateZ(0deg) translate(-300px) rotateZ(-0deg) }
+        100% { transform: translate(-50%, -50%) rotateZ(360deg) translate(-300px) rotateZ(-360deg) }
+    }
+
+    .short-poem {
+        font-size: 24px;
+    }
+}

@@ -7,65 +7,22 @@ const separator = document.getElementsByClassName("separator")[0];
 const wordMeaning1 = document.getElementsByClassName("word-meaning1")[0];
 const wordMeaning2 = document.getElementsByClassName("word-meaning2")[0];
 const wordMeaning3 = document.getElementsByClassName("word-meaning3")[0];
-const resetButton = document.getElementsByClassName("reset-button")[0];
+const dictNav = document.getElementsByClassName("dict-nav")[0];
+const isSmall = window.innerWidth < 680;
+const decenterName = isSmall ? "decenter-word" : "decenter-word-large";
+const expansionAnim = isSmall ? "expand-syllables" : "expand-syllables-large";
 
 function inspect() {
-    word.classList.add("decenter-word");
+    word.classList.add(decenterName);
     for(i = 0; i < syllables.length; i++)
-        syllables[i].classList.add("expand-syllables");
+        syllables[i].classList.add(expansionAnim);
     phonetic.classList.add("show-phonetic");
     type.classList.add("show-type");
     separator.classList.add("draw-separator");
     wordMeaning1.classList.add("show-word-meaning1");
     wordMeaning2.classList.add("show-word-meaning2");
     wordMeaning3.classList.add("show-word-meaning3");
-    resetButton.classList.add("show-reset-button");
+    dictNav.classList.add("show-dict-nav");
 }
-
-function reset() {
-    // word.classList.remove("decenter-word");
-    // for(i = 0; i < syllables.length; i++)
-    //     syllables[i].classList.remove("expand-syllables");
-    // phonetic.classList.remove("show-phonetic");
-    // type.classList.remove("show-type");
-    // separator.classList.remove("draw-separator");
-    // wordMeaning1.classList.remove("show-word-meaning1");
-    // wordMeaning2.classList.remove("show-word-meaning2");
-    // wordMeaning3.classList.remove("show-word-meaning3");
-    // resetButton.classList.remove("show-reset-button");
-
-    // word.classList.add("center-word");
-    // for(i = 0; i < syllables.length; i++)
-    //     syllables[i].classList.add("contract-syllables");
-    // phonetic.classList.add("hide-phonetic");
-    // type.classList.add("hide-type");
-    // separator.classList.add("clear-separator");
-    // wordMeaning1.classList.add("hide-word-meaning1");
-    // wordMeaning2.classList.add("hide-word-meaning2");
-    // wordMeaning3.classList.add("hide-word-meaning3");
-    // resetButton.classList.add("hide-reset-button");
-}
-
-// if (word)
-// {
-    // word.addEventListener("click", inspect, false);
-    // resetButton.addEventListener("animationend", setupReset, false);
-    // page.addEventListener("click", reset, false);
-// }
 
 inspect();
-
-
-
-// function inspect() {
-//     word.classList.remove("word-interactable");
-//     word.classList.add("word-decenter");
-//     for(i = 0; i < syllables.length; i++)
-//         syllables[i].classList.add("expand-syllables");
-//     document.getElementsByClassName("word-phonetic")[0].classList.add("show-phonetic");
-//     document.getElementsByClassName("word-type")[0].classList.add("show-type");
-//     document.getElementsByClassName("separator")[0].classList.add("draw-separator");
-//     document.getElementsByClassName("word-meaning1")[0].classList.add("show-word-meaning1");
-//     document.getElementsByClassName("word-meaning2")[0].classList.add("show-word-meaning2");
-//     document.getElementsByClassName("word-meaning3")[0].classList.add("show-word-meaning3");
-// }
