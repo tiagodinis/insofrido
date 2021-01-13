@@ -1,6 +1,6 @@
 //-- Index setup -----------------------------------------------------------------------------------
 
-const textLineList = document.getElementsByClassName("text-line-list")[0];
+const textLineList = document.getElementsByClassName("text-line-background")[0];
 const letterCircle = document.getElementsByClassName("letter-circle")[0];
 const discCollider = document.getElementsByClassName("disc-collider")[0].firstElementChild;
 const letterArray = Array.from("INSOFRIDO");
@@ -13,7 +13,7 @@ const textLineMold = document.createElement("div");
 textLineMold.classList.add("text-line");
 textLineMold.innerText = textLineText;
 const letterMold = document.createElement("div");
-letterMold.classList.add("letter");
+letterMold.style.position = "absolute";
 
 function setupIndex() {
     const isSmall = window.innerHeight < 680 || window.innerWidth < 680;
@@ -47,8 +47,8 @@ function setupIndex() {
 //-- Transition ------------------------------------------------------------------------------------
 
 const body = document.getElementsByTagName("body")[0];
-const screenContainer = document.getElementsByClassName("screen-container")[0];
-const page = document.getElementsByClassName("page")[0];
+const index = document.getElementsByClassName("index")[0];
+const dict = document.getElementsByClassName("dict")[0];
 var towardsDict;
 
 function highlightLetterCircle() {
@@ -62,20 +62,20 @@ function dehighlightLetterCircle() {
 function indexToDict() {
     // Disable element interactions and fade-in
     body.style.pointerEvents = "none";
-    screenContainer.style.animation = "fade-out 1s ease-out forwards";
+    index.style.animation = "fade-out 1s ease-out forwards";
     towardsDict = true;
 }
 
 function dictToIndex() {
     body.style.pointerEvents = "none";
-    page.style.animation = "fade-out 1s ease-out forwards";
+    dict.style.animation = "fade-out 1s ease-out forwards";
     towardsDict = false;
 }
 
 function animationEndBrancher() {
     if (!towardsDict) // dict to index, end of fade-out
     {
-        // Remove animation properties (avoids instant playing when page is displayed)
+        // Remove animation properties (avoids instant playing when dict is displayed)
         word.style.removeProperty("animation");
         for(i = 0; i < syllables.length; i++)
             syllables[i].style.removeProperty("animation");
@@ -86,17 +86,19 @@ function animationEndBrancher() {
         wordMeaning2.style.removeProperty("animation");
         wordMeaning3.style.removeProperty("animation");
         resetButton.style.removeProperty("animation");
+        dict.style.removeProperty("animation");
+        animatingDict = false;
 
-        page.style.display = "none";
-        screenContainer.style.display = "initial";
-        screenContainer.style.animation = "fade-in 1s ease-in forwards";
+        dict.style.display = "none";
+        index.style.display = "initial";
+        index.style.animation = "fade-in 1s ease-in forwards";
         body.style.pointerEvents = "auto";
         dehighlightLetterCircle();
     }
-    else if (page.style.display !== "initial") { // index to dict, end of fade-out
-        screenContainer.style.display = "none";
-        page.style.display = "initial";
-        page.style.animation = "fade-in 1s ease-in forwards";
+    else if (dict.style.display !== "initial") { // index to dict, end of fade-out
+        index.style.display = "none";
+        dict.style.display = "initial";
+        dict.style.animation = "fade-in 1s ease-in forwards";
     }
     // index to dict, end of fade-in
     else dictAnimation();
@@ -113,8 +115,12 @@ const wordMeaning1 = document.getElementsByClassName("word-meaning1")[0];
 const wordMeaning2 = document.getElementsByClassName("word-meaning2")[0];
 const wordMeaning3 = document.getElementsByClassName("word-meaning3")[0];
 const resetButton = document.getElementsByClassName("reset-button")[0];
+var animatingDict;
 
 function dictAnimation() {
+    if (animatingDict) return;
+    else animatingDict = true;
+
     const isSmall = window.innerHeight < 680 || window.innerWidth < 680;
     const decenterAnimName = isSmall ? "decenter-word" : "decenter-word-large";
     const expansionAnimName = isSmall ? "expand-syllables" : "expand-syllables-large";
@@ -137,8 +143,8 @@ discCollider.addEventListener("mouseover", highlightLetterCircle);
 discCollider.addEventListener("mouseleave", dehighlightLetterCircle);
 discCollider.addEventListener("click", indexToDict);
 resetButton.addEventListener("click", dictToIndex);
-screenContainer.addEventListener("animationend", animationEndBrancher);
-page.addEventListener("animationend", animationEndBrancher);
+index.addEventListener("animationend", animationEndBrancher);
+dict.addEventListener("animationend", animationEndBrancher);
 
 setupIndex();
 
