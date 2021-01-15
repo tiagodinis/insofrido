@@ -33,7 +33,8 @@
 }
 
 .syllable-dot {
-    font-family: initial; /* ?? fixes wrong char on mobile */
+    /* font-family: initial; ?? fixes wrong char on mobile */
+    font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     margin: -7.345px;
     color: black;
     opacity: 0;
