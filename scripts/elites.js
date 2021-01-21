@@ -1,114 +1,70 @@
-// GOAL: like this (https://twitter.com/concinnus/status/1338831202527141894) but alternating
-
-const dotInc = 3;
-const maxAnimInc = 0.001;
 const dotDiameter = 10;
-const nrLayers = 15;
-let topLayerDots = dotInc * nrLayers;
+const nrLayers = 8;
+const layerDotInc = 3;
+const outerLayerDots = layerDotInc * nrLayers;
 const layerDistance = 10;
+const maxOffsetInc = 0.001;
 const layerRadiusInc = dotDiameter + layerDistance;
 
-let anim, animInc;
-let oX, oY, x, y, nrDots, nextNrDots, layerRadius, inc, layerAnim, currentInc;
+let oX, oY, x, y, layerDots, nextLayerDots, layerRadius, layerAngleInc, layerOffset, currentAngleInc;
+let offset = 0;
+let offsetInc = maxOffsetInc;
+
+let tStart, tElapsed, tPercent;
+let tEnd = offsetInc;
+let tInterval = 60;
+let previousHolding = false;
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
     noStroke();
-    anim = 0;
-    animInc = maxAnimInc;
+    fill(0);
     oX = (windowWidth / 2) - dotDiameter * 0.5;
     oY = (windowHeight / 2) - dotDiameter * 0.5;
-    fill(0);
-
-    tEnd = maxAnimInc;
 }
 
-let previousHolding = false;
-let tInterval = 60;
-let tStart, tEnd, tElapsed, tPercent;
-
 function draw() {
-    background(225);
+    background(255);
 
     x = 0;
     y = 0;
-    nrDots = dotInc;
-    nextNrDots = nrDots + dotInc;
-    layerRadius = 15;
-    inc = TWO_PI / nrDots;
-    for (let j = 0; j < nrLayers; ++j) {
-        layerAnim = anim * (topLayerDots / nrDots) * (nrLayers - j);
-        // if (j > 0) layerAnim = 0;
-        // layerAnim = 0;
+    nextLayerDots = layerDotInc;
+    layerRadius = -5; // A bit closer together on first layer
 
-        for (let i = 0; i < nrDots; ++i) {
-            currentInc = inc * i + layerAnim;
-            x = cos(currentInc) * layerRadius + oX;
-            y = sin(currentInc) * layerRadius + oY;
+    for (let j = 0; j < nrLayers; ++j) {
+        layerDots = nextLayerDots;
+        nextLayerDots += layerDotInc;
+        layerRadius += layerRadiusInc;
+        layerAngleInc = TWO_PI / layerDots;
+
+        layerOffset = offset * (outerLayerDots / layerDots) * (nrLayers - j);
+
+        for (let i = 0; i < layerDots; ++i) {
+            currentAngleInc = layerAngleInc * i + layerOffset;
+            x = cos(currentAngleInc) * layerRadius + oX;
+            y = sin(currentAngleInc) * layerRadius + oY;
             circle(x, y, dotDiameter);
         }
-
-        nrDots = nextNrDots;
-        nextNrDots += dotInc;
-        layerRadius += layerRadiusInc;
-        inc = TWO_PI / nrDots;
     }
 
-    let holding = keyIsPressed && keyCode === DOWN_ARROW;
-    if (holding && !previousHolding)
-    {
-        tElapsed = 0;
-        tStart = maxAnimInc;
-        tEnd = -maxAnimInc;
-        previousHolding = holding;
-        console.log("1");
-    }
-    else if (!holding && previousHolding) {
-        tElapsed = 0;
-        tStart = -maxAnimInc;
-        tEnd = maxAnimInc;
-
-        // animInc
-
-        previousHolding = holding;
-        console.log("2");
-    }
-
-    tElapsed++;
-
-    if (animInc != tEnd) {
-        tPercent = tElapsed / tInterval;
-        animInc = lerp(tStart, tEnd, tPercent);
+    {// Mouse holding interaction
+        let holding = mouseIsPressed;
+        if (holding !== previousHolding)
+        {
+            tElapsed = 0;
+            tStart = offsetInc;
+            tEnd = holding ? -maxOffsetInc : maxOffsetInc;
+            tInterval = tInterval;
+            previousHolding = holding;
+        }
+    
+        tElapsed++;
+    
+        if (offsetInc != tEnd) {
+            tPercent = tElapsed / tInterval;
+            offsetInc = lerp(tStart, tEnd, tPercent);
+        }
     }
 
-    anim += animInc;
+    offset += offsetInc;
 }
-
-// function draw() {
-//     background(225);
-
-//     x = 0;
-//     y = 0;
-//     nrDots = dotInc;
-//     nextNrDots = nrDots + dotInc;
-//     layerRadius = 15;
-//     inc = TWO_PI / nrDots;
-//     for (let j = 0; j < nrLayers; ++j) {
-//         layerAnim = anim * (topLayerDots / nrDots) * (nrLayers - j);
-
-//         for (let i = 0; i < nrDots; ++i) {
-//             currentInc = inc * i + layerAnim;
-//             x = cos(currentInc) * layerRadius + oX;
-//             y = sin(currentInc) * layerRadius + oY;
-//             circle(x, y, dotDiameter);
-//         }
-
-//         nrDots = nextNrDots;
-//         nextNrDots += dotInc;
-//         layerRadius += layerRadiusInc;
-//         inc = TWO_PI / nrDots;
-//     }
-
-//     if (!(keyIsPressed && keyCode === DOWN_ARROW))
-//         anim += animInc;
-// }
