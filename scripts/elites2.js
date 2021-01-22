@@ -1,24 +1,14 @@
-// TODOS
-// [ ] Title: Elites
-// [x] Catalyse
-// [ ] Molt
-    // [ ] Press to molt 1 layer
-    // [ ] Other functions other then lerp to change values (get barron)
-    // BUG: nrLayers and maxOffsetInc, jittery movements especially on first iteration
-// [ ] Audit
-// [ ] Integrate Catalyse with Audit
-
-const dotDiameter = 10;
-const nrLayers = 9;
-const layerDotInc = 3;
-const layerDistance = 10;
-const maxOffsetInc = 0.008;
-const layerRadiusInc = dotDiameter + layerDistance;
+const dotDiameter = 10; //
+const nrLayers = 9; // TODO: increase by 1 from catalyse
+const layerDotInc = 3; //
+const layerDistance = 10; //
+const maxOffsetInc = 0.008; //
+const layerRadiusInc = dotDiameter + layerDistance; //
 
 const loopInterval = 1;
-let oX, oY, x, y;
-let offset = 1;
-let offsetInc = maxOffsetInc;
+let oX, oY, x, y; //
+let offset = 0; //
+let offsetInc = maxOffsetInc; //
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -30,14 +20,13 @@ function setup() {
 function draw() {
     background(255);
 
-    // if (!mouseIsPressed)
-    //     offset += offsetInc;
+    if (!mouseIsPressed)
+        offset += offsetInc;
     
-    // if (offset > 1) offset -= 1;
+    if (offset > 1) offset -= 1;
 
     // Single dot transition percentage
-    // let percentage = (offset * layerDotInc) % loopInterval;
-    let percentage = 1;
+    let percentage = (offset * layerDotInc) % loopInterval;
 
     for (let j = 0; j < nrLayers; ++j) {
         // Previous layer dots + current layer dots

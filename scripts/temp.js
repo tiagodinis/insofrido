@@ -1,45 +1,30 @@
-// TODOS
-// [ ] Make everything time instead of frame based
-// [ ] Other functions other then lerp to change values (get barron)
-// Catalyse
-    // [ ] Change some dot colors overtime (must molt to get rid of them)
-// Molt
-    // BUG: nrLayers and maxOffsetInc interactions, jittery movements especially on first iteration
-// [ ] Integrate Catalyse with Molt
-    // [x] Catalyse -> Molt
-    // [ ] Molt -> Catalyse
-// [ ] Audit
-// [ ] Title: Elites
-// -------------------------------------------------------------------------------------------------
-
 let time = 0;
 let catalyseOffset = 0;
 let moltOffset = 0;
 
 // Base parameters
 const dotDiameter = 10;
+let nrLayers = 8;
 const layerDotInc = 3;
 const layerDistance = 10;
 const layerRadiusInc = dotDiameter + layerDistance;
 let oX, oY; // (!) Const, but must init on setup
-let mode; // 1: catalyse 2: molt 3: audit
+let mode = 1; // 1: catalyse 2: molt 3: audit
 let queuedMode;
-let nrLayers;
-
 
 // Catalyse
-const catalyseNrLayers = 8;
-const maxCatalyseOffsetInc = 0.003;
+const maxCatalyseOffsetInc = 0.001;
+// const maxCatalyseOffsetInc = 0.003;
 let catalyseOffsetInc = maxCatalyseOffsetInc;
-const outerLayerDots = catalyseNrLayers * layerDotInc;
-let loopDistance; // (!) Const, but must init on setup
+const outerLayerDots = nrLayers * layerDotInc;
 
 // Molt
 const loopInterval = 1;
 const maxMoltOffsetInc = 0.008;
 let moltOffsetInc = maxMoltOffsetInc;
 
-// TODO: Audit
+
+// Audit
 
 let anim = null;
 
@@ -49,16 +34,24 @@ function setup() {
     fill(0);
     oX = (windowWidth / 2) - dotDiameter * 0.5;
     oY = (windowHeight / 2) - dotDiameter * 0.5;
-    loopDistance = HALF_PI / 6;
-    setMode(1);
 }
 
 function draw() {
     background(255);
 
+    // How much time for nrLayer inner loops? TWO_PI
+    // How much time for one inner loop? TWO_PI / nrLayers
+    // How many loops? floor(catalyseOffset / (TWO_PI / nrLayers))
+    // How much remaining time for nrLayer inner loops?
+    // TWO_PI - catalyseOffset
+
+    //
     let moltThirdPercentage = (moltOffset * layerDotInc) % loopInterval;
 
-    let currentLDots, layerRadius, layerAngleInc, catalyseLayerOffset;
+    let currentLDots;
+    let layerRadius;
+    let layerAngleInc;
+    let catalyseLayerOffset;
 
     // Layers
     for (let j = 0; j < nrLayers; ++j) {
@@ -71,12 +64,14 @@ function draw() {
             currentLDots = ceil(layerDotInc * j + moltOffset * layerDotInc);
             layerRadius = layerRadiusInc * j + moltOffset * layerRadiusInc - 5;
             layerAngleInc = TWO_PI / (currentLDots - 1 + moltThirdPercentage);
+            catalyseLayerOffset = catalyseOffset;
         }
 
         // Layer dots
         for (let i = 0; i < currentLDots; ++i) {
             let currentAngleInc = layerAngleInc * i;
             if (mode === 1) currentAngleInc += catalyseLayerOffset;
+            else if (mode === 2) currentAngleInc += TWO_PI / 3;
             const x = cos(currentAngleInc) * layerRadius + oX;
             const y = sin(currentAngleInc) * layerRadius + oY;
 
@@ -91,54 +86,48 @@ function draw() {
         }
     }
 
+
+    // Animation
     // TODO: move this up, no 1 frame lag
-    // Animation request
-    if (!anim) {
-        if (isKeyPressed) {
-            if (keyCode === UP_ARROW) { // Request molt mode and decelerate
-                queuedMode = 2;
-                let distance = loopDistance - (catalyseOffset % loopDistance);
-                const avgSpeed = catalyseOffsetInc * 0.5; // (!) Assumes linear interp
-                const requiredFrames = ceil(distance / avgSpeed);
-                anim = new MyAnimation(catalyseOffsetInc, 0, requiredFrames);
-            }
-            else if (keyCode === DOWN_ARROW) { // Request catalyse mode and decelerate
-                queuedMode = 1;
-                // TODO:
-            }
-            else if (keyCode === LEFT_ARROW) { // Request audit mode and decelerate
-                queuedMode = 3;
-                // TODO:
-            }
-        }
+    if (!anim && isKeyPressed && keyCode === UP_ARROW) // c: 67, m: 77, a: 65
+    {
+        // Set molt process and start decelerating
+        queuedMode = 2;
+        anim = new MyAnimation(catalyseOffsetInc, 0, 120, lerp);
     }
+    // else if (isKeyPressed && keyCode === DOWN_ARROW)
+    // {
+    //     // TODO: start audit offset
+    //     // TODO: decelerate
+    // }
 
     // Animation update
     if (anim) {
-        if (mode === 1) anim.tElapsed++;
+        anim.tElapsed++;
 
         // TODO: update a variable based on mode
         catalyseOffsetInc = anim.getValue();
 
         if (anim.isDone()) {
             anim = null;
-            setMode(queuedMode);
+            mode = queuedMode;
+            if (mode === 2) nrLayers = 9;
         }
     }
 
-    // Update offsets
-    if (mode === 1) catalyseOffset += catalyseOffsetInc;
+    if (!mouseIsPressed && mode === 1) {
+        catalyseOffset += catalyseOffsetInc;
+        if (catalyseOffset > HALF_PI) catalyseOffset -= HALF_PI;
+        console.log(catalyseOffset);
+
+    }
     else if (mode === 2) {
         moltOffset += moltOffsetInc;
         if (moltOffset > 1) moltOffset--;
     }
     time += deltaTime;
-}
 
-function setMode(newMode) {
-    mode = newMode;
-    if (mode === 1) nrLayers = catalyseNrLayers;
-    else if (mode === 2) nrLayers = catalyseNrLayers + 1;
+    // console.log("catalyse: " + catalyseOffset + " molt: " + moltOffset);
 }
 
 class MyAnimation {
@@ -150,11 +139,30 @@ class MyAnimation {
     }
 
     getValue() {
-        const elapsedPercentage = constrain(this.tElapsed / this.tInterval, 0, 1);
-        return lerp(this.tStart, this.tEnd, elapsedPercentage);
+        const percentage = constrain(this.tElapsed / this.tInterval, 0, 1);
+        return lerp(this.tStart, this.tEnd, percentage);
     }
 
     isDone() {
         return this.tElapsed > this.tInterval;
     }
 }
+
+    // {// Mouse holding interaction
+    //     let holding = mouseIsPressed;
+    //     if (holding !== previousHolding)
+    //     {
+    //         tElapsed = 0;
+    //         tStart = catalyseOffsetInc;
+    //         tEnd = holding ? 0 : maxCatalyseOffsetInc;
+    //         tInterval = tInterval;
+    //         previousHolding = holding;
+    //     }
+    
+    //     tElapsed++;
+    
+    //     if (catalyseOffsetInc != tEnd) {
+    //         tPercent = tElapsed / tInterval;
+    //         catalyseOffsetInc = lerp(tStart, tEnd, tPercent);
+    //     }
+    // }
