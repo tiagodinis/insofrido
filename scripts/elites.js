@@ -12,7 +12,7 @@
 // [ ] Title: Elites
 // -------------------------------------------------------------------------------------------------
 
-let time = 0;
+// let time = 0;
 let catalyseOffset = 0;
 let moltOffset = 0;
 
@@ -36,6 +36,7 @@ let loopDistance; // (!) Const, but must init on setup
 
 // Molt
 const loopInterval = 1;
+const moltNrLayers = 9;
 const maxMoltOffsetInc = 0.008;
 let moltOffsetInc = maxMoltOffsetInc;
 
@@ -80,7 +81,8 @@ function draw() {
             const x = cos(currentAngleInc) * layerRadius + oX;
             const y = sin(currentAngleInc) * layerRadius + oY;
 
-            if (mode === 2) {
+            if (mode === 1) fill(0);
+            else if (mode === 2) {
                 // Last layer? Last dot? Everything else
                 if (j === (nrLayers - 1 )) fill(0, lerp(255, 0, moltOffset));
                 else if (i === currentLDots - 1) fill(0, lerp(0, 255, moltThirdPercentage));
@@ -103,8 +105,12 @@ function draw() {
                 anim = new MyAnimation(catalyseOffsetInc, 0, requiredFrames);
             }
             else if (keyCode === DOWN_ARROW) { // Request catalyse mode and decelerate
+                console.log("request");
                 queuedMode = 1;
-                // TODO:
+                let distance = 1 - moltOffset;
+                const avgSpeed = moltOffsetInc * 0.5; // (!) Assumes linear interp
+                const requiredFrames = ceil(distance / avgSpeed);
+                anim = new MyAnimation(moltOffsetInc, 0, requiredFrames);
             }
             else if (keyCode === LEFT_ARROW) { // Request audit mode and decelerate
                 queuedMode = 3;
@@ -115,10 +121,11 @@ function draw() {
 
     // Animation update
     if (anim) {
-        if (mode === 1) anim.tElapsed++;
+        anim.tElapsed++;
 
         // TODO: update a variable based on mode
-        catalyseOffsetInc = anim.getValue();
+        if (mode === 1) catalyseOffsetInc = anim.getValue();
+        else if (mode === 2) moltOffsetInc = anim.getValue();
 
         if (anim.isDone()) {
             anim = null;
@@ -132,13 +139,21 @@ function draw() {
         moltOffset += moltOffsetInc;
         if (moltOffset > 1) moltOffset--;
     }
-    time += deltaTime;
+    // time += deltaTime;
+
+    console.log(catalyseOffset);
 }
 
 function setMode(newMode) {
     mode = newMode;
-    if (mode === 1) nrLayers = catalyseNrLayers;
-    else if (mode === 2) nrLayers = catalyseNrLayers + 1;
+    if (mode === 1) {
+        nrLayers = catalyseNrLayers;
+        catalyseOffsetInc = maxCatalyseOffsetInc;
+    }
+    else if (mode === 2) {
+        nrLayers = moltNrLayers;
+        moltOffsetInc = maxMoltOffsetInc;
+    }
 }
 
 class MyAnimation {
