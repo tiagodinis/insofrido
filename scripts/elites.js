@@ -1,29 +1,36 @@
-// TODOS
-// [ ] Selection buttons
-    // [ ] Ease arrow with hovering or selecting
-    // [ ] Arrow jittering around when selection is final
-    // [ ] Quick text color fade in and fade out when actually transitioning
-// [ ] Test with different screen compositions
-// -------------------------------------------------------------------------------------------------
-
 // Base parameters
 const baseNrLayers = 8;
 const layerDotInc = 3;
 const layerDistance = 10;
 const baseDotDiameter = 10;
 const layerRadiusInc = layerDistance + baseDotDiameter;
-let oX, oY; // (!) Init on setup
+const CATALYSE = 'Catalyse';
+const AUDIT = 'Audit';
+const MOLT = 'Molt';
+const MERGE = 'Merge';
+let oX, oY; // (!) Setup
 // Base state
 let mode;
-let queuedMode;
+let queuedMode = CATALYSE;
 let nrLayers;
 let transitionInterp;
 let dotDiameter = baseDotDiameter;
 
+// Menu parameters
+let font; // (!) Preload
+const fontSize = 64;
+const hoveredFontSize = 70;
+const fontLineHeight = 20;
+const queuedFontColor = 240;
+let menuStart; // (!) Setup
+const buttonList = [ CATALYSE, AUDIT, MOLT, MERGE ];
+// Button state
+let hoveredIndex = 0;
+
 // Catalyse parameters
 const outerLayerNrDots = baseNrLayers * layerDotInc;
 const maxCatalyseOffsetInc = 0.003;
-let catalyseLoopDistance; // (!) Init on setup
+let catalyseLoopDistance; // (!) Setup
 // Catalyse state
 let catalyseOffsetInc;
 let catalyseOffset;
@@ -39,127 +46,22 @@ let moltOffset;
 // Audit parameters
 const amplitude = 6;
 const auditOffsetInc = 0.08;
-let phaseShift; // (!) Init on setup
-let auditLoopDistance; // (!) Init on setup
+let phaseShift; // (!) Setup
+let auditLoopDistance; // (!) Setup
 // Audit state
 let auditOffset;
 
 // Merge parameters
 const maxMergeOffsetInc = 0.05;
-let mergeSwitchDistance; // (!) Init on setup
-let mergeAnimDistance; // (!) Init on setup
-let switchDotDiameter; // (!) Init on setup
+let mergeSwitchDistance; // (!) Setup
+let mergeAnimDistance; // (!) Setup
+let switchDotDiameter; // (!) Setup
 // Merge state
 let linearOffset;
 let mergeOffset;
 let mergeOffsetInc;
 
-// Menu
-let font; // (!) Init on preload
-const fontSize = 64;
-const fontLineHeight = 20;
-const arrowDimension = 20;
-const arrowStrokeWeight = 4;
-const rectW = 300;
-const rectH = 300;
-
-let CATALYSE = 'Catalyse';
-let AUDIT = 'Audit';
-let MOLT = 'Molt';
-let MERGE = 'Merge';
-let wordList = [CATALYSE, AUDIT, MOLT, MERGE];
-
-const arrowOffset = 40;
-const menuHeight = wordList.length * (fontSize + fontLineHeight);
-let menuWidth; // (!) Init on setup
-let halfHeight; // (!) Init on setup
-let menuStart; // (!) Init on setup
-let halfUpper; // (!) Init on setup
-
-let hoveredIndex;
-
 // -------------------------------------------------------------------------------------------------
-
-function drawButtons() {
-    push();
-        // push(); // Aux gizmos
-        //     stroke(0);
-        //     strokeWeight(1);
-        //     noFill();
-        //     line(0, halfHeight, windowWidth, halfHeight);
-        //     line(0, menuStart, windowWidth, menuStart);
-        //     line(0, halfUpper, windowWidth, halfUpper);
-            
-        //     translate(windowWidth * 0.5 - menuWidth * 0.5, menuStart);
-            
-        //     rect(0, 0, menuWidth, menuHeight);
-        // pop();
-
-        translate(windowWidth * 0.5 - menuWidth * 0.5, menuStart);
-
-        let modeIndex = wordList.indexOf(mode);
-        let queuedModeIndex = wordList.indexOf(queuedMode);
-
-        // Buttons style
-        noFill();
-        stroke(0);
-        strokeWeight(1);
-        // Buttons
-        cursor(ARROW);
-        for (i = 0; i < wordList.length; ++i) {
-            // Collision detection
-            let yMin = i * (fontSize + fontLineHeight) - 10;
-            let yMax = (i + 1) * (fontSize + fontLineHeight) - 10;
-            // line(0, yMin, menuWidth, yMin);
-            // line(0, yMax, menuWidth, yMax);
-
-            // Query hoveredIndex and change cursor if hovering
-            if (mouseY > yMin + menuStart && mouseY < yMax + menuStart) {
-                cursor(HAND);
-                hoveredIndex = i;
-                if (!transitionInterp && mouseIsPressed) {
-                    if (i !== modeIndex && i !== queuedModeIndex) {
-                        queuedMode = wordList[i];
-                        queuedModeIndex = i;
-                    }
-
-                    // Set deceleration interp if one of the available options was pressed
-                    if (mode === CATALYSE && queuedMode !== mode) {
-                        let distance = catalyseLoopDistance - catalyseOffset;
-                        const avgSpeed = maxCatalyseOffsetInc * 0.5; // (!) Assumes linear interp
-                        const requiredFrames = ceil(distance / avgSpeed);
-                        transitionInterp = new LInterpolator(maxCatalyseOffsetInc, 0, requiredFrames);
-                    }
-                    else if (mode === MOLT && queuedMode !== mode) {
-                        let distance = moltLoopDistance - moltOffset;
-                        const avgSpeed = maxMoltOffsetInc * 0.5; // (!) Assumes linear interp
-                        const requiredFrames = ceil(distance / avgSpeed);
-                        transitionInterp = new LInterpolator(maxMoltOffsetInc, 0, requiredFrames);
-                    }
-                }
-            }
-            
-            // Draw words (fill the one corresponding to the selected one)
-            if (i === modeIndex) fill(0);
-            else noFill();
-            text(wordList[i], arrowOffset, yMax - fontLineHeight);
-        }
-
-        // Arrow style change
-        noFill();
-        strokeWeight(arrowStrokeWeight);
-        strokeJoin(ROUND);
-        // stroke(255, 0, 0);
-        // Arrow
-        beginShape();
-        let hasRequested = queuedMode !== mode;
-        let arrowIndex = hasRequested ? queuedModeIndex : hoveredIndex;
-        vertex(0, arrowIndex * (fontSize + fontLineHeight) + 10);
-        vertex(arrowDimension, arrowIndex * (fontSize + fontLineHeight) + arrowDimension + 10);
-        vertex(0, arrowIndex * (fontSize + fontLineHeight) + arrowDimension * 2 + 10);
-        endShape();
-    pop();
-}
 
 function preload() {
     font = loadFont('fonts/raleway/Raleway-Bold.ttf');
@@ -169,36 +71,27 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     noStroke();
     textFont(font);
-    textSize(fontSize);
+    textSize(fontSize); // TODO: Why is this important for catalyse?
+    textAlign(CENTER);
+    setMode(CATALYSE);
 
+    // Menu
+    const menuHeight = buttonList.length * (fontSize + fontLineHeight);
+    const halfHeight = windowHeight * 0.5;
+    menuStart = halfHeight + (halfHeight - menuHeight) * 0.5;
+    // Base
+    oX = (windowWidth * 0.5) - dotDiameter * 0.5;
+    oY = menuStart * 0.5;
+    // Catalyse
     catalyseLoopDistance = HALF_PI / 6;
-
+    // Audit
     phaseShift = PI;
     auditLoopDistance = TWO_PI + phaseShift;
-
+    // Merge
     mergeSwitchDistance = PI * 2.5;
     mergeAnimDistance = PI * 9;
-    switchDotDiameter = layerRadiusInc * baseNrLayers * 2 + 2; // (!) forgotten magic
-    switchDotDiameter -= mergeSwitchDistance * baseNrLayers * 4 + baseDotDiameter; // (!) forgotten magic
-
-    setMode(CATALYSE);
-    queuedMode = CATALYSE;
-
-    // TODO: REMOVE AVAILABLE OPTIONS WHEN SELECTION IS DONE ANOTHER WAY
-    // availableOptions = [LEFT_ARROW, RIGHT_ARROW, UP_ARROW, DOWN_ARROW];
-
-    menuWidth = 0;
-    for (i = 0; i < wordList.length; ++i)
-        if (menuWidth < textWidth(wordList[i])) menuWidth = textWidth(wordList[i]);
-    menuWidth += arrowOffset;
-    halfHeight = windowHeight * 0.5;
-    menuStart = halfHeight + (halfHeight - menuHeight) * 0.5;
-    halfUpper = menuStart * 0.5;
-
-    oX = (windowWidth * 0.5) - dotDiameter * 0.5;
-    oY = halfUpper;
-
-    hoveredIndex = 0;
+    switchDotDiameter = layerRadiusInc * baseNrLayers * 2 + 2; // (!) Cosmic horrors
+    switchDotDiameter -= mergeSwitchDistance * baseNrLayers * 4 + baseDotDiameter; // (!) Forgotten magic
 }
 
 function draw() {
@@ -263,30 +156,9 @@ function draw() {
         }
     }
 
-    drawButtons();
+    drawMenu();
 
-// // Request new mode
-//     if (!transitionInterp && isKeyPressed && availableOptions.includes(keyCode)) {
-//         // Queue requested mode
-//         if (keyCode === RIGHT_ARROW && mode !== CATALYSE && queuedMode !== CATALYSE) queuedMode = CATALYSE;
-//         else if (keyCode === UP_ARROW && mode !== AUDIT && queuedMode !== AUDIT) queuedMode = AUDIT;
-//         else if (keyCode === LEFT_ARROW && mode !== MOLT && queuedMode !== MOLT) queuedMode = MOLT;
-//         else if (keyCode === DOWN_ARROW && mode !== MERGE && queuedMode !== MERGE) queuedMode = MERGE;
-
-//         // Set deceleration interp if one of the available options was pressed
-//         if (mode === CATALYSE && queuedMode !== mode) {
-//             let distance = catalyseLoopDistance - catalyseOffset;
-//             const avgSpeed = maxCatalyseOffsetInc * 0.5; // (!) Assumes linear interp
-//             const requiredFrames = ceil(distance / avgSpeed);
-//             transitionInterp = new LInterpolator(maxCatalyseOffsetInc, 0, requiredFrames);
-//         }
-//         else if (mode === MOLT && queuedMode !== mode) {
-//             let distance = moltLoopDistance - moltOffset;
-//             const avgSpeed = maxMoltOffsetInc * 0.5; // (!) Assumes linear interp
-//             const requiredFrames = ceil(distance / avgSpeed);
-//             transitionInterp = new LInterpolator(maxMoltOffsetInc, 0, requiredFrames);
-//         }
-//     }
+    updateInterpolations();
 
 // Update transition interpolation
     if (transitionInterp) {
@@ -298,7 +170,7 @@ function draw() {
 
         if (transitionInterp.isDone()) {
             transitionInterp = null;
-            if (mode !== queuedMode) setMode(queuedMode);
+            if (mode !== queuedMode && mode !== MERGE) setMode(queuedMode);
         }
     }
 
@@ -337,6 +209,76 @@ function draw() {
 }
 
 // -------------------------------------------------------------------------------------------------
+
+function getModeIndex(m) {
+    for (i = 0; i < buttonList.length; ++i)
+        if (buttonList[i] === m) return i;
+
+    return -1;
+}
+
+function drawMenu() {
+    push();
+        translate(windowWidth * 0.5, menuStart);
+
+        let modeIndex = getModeIndex(mode);
+        let queuedModeIndex = getModeIndex(queuedMode);
+
+        // Assume hovering nothing
+        cursor(ARROW);
+        hoveredIndex = -1;
+
+        // Buttons
+        noFill();
+        stroke(0);
+        strokeWeight(1);
+        for (i = 0; i < buttonList.length; ++i) {
+            const yMin = i * (fontSize + fontLineHeight) - 10;
+            const yMax = (i + 1) * (fontSize + fontLineHeight) - 10;
+            const xMax = textWidth(buttonList[i].name) * 0.5; // Half word width
+            const xMin = -xMax;
+
+            // Detect collision and change cursor if hovering
+            if (mouseY > yMin + menuStart && mouseY < yMax + menuStart
+                && mouseX > xMin + oX && mouseX < xMax + oX) {
+                cursor(HAND);
+                hoveredIndex = i;
+                if (mouseIsPressed) {
+                    if (i !== modeIndex && i !== queuedModeIndex) {
+                        queuedMode = buttonList[i];
+                        queuedModeIndex = i;
+                        setInterp('queuedFontSize', hoveredFontSize, fontSize, 500, 0.4, 0, 0, false, true);
+                    }
+
+                    // Set deceleration interp if one of the available options was pressed
+                    if (mode === CATALYSE && queuedMode !== mode) {
+                        let distance = catalyseLoopDistance - catalyseOffset;
+                        const avgSpeed = maxCatalyseOffsetInc * 0.5; // (!) Assumes linear interp
+                        const requiredFrames = ceil(distance / avgSpeed);
+                        transitionInterp = new LInterpolator(maxCatalyseOffsetInc, 0, requiredFrames);
+                    }
+                    else if (mode === MOLT && queuedMode !== mode) {
+                        let distance = moltLoopDistance - moltOffset;
+                        const avgSpeed = maxMoltOffsetInc * 0.5; // (!) Assumes linear interp
+                        const requiredFrames = ceil(distance / avgSpeed);
+                        transitionInterp = new LInterpolator(maxMoltOffsetInc, 0, requiredFrames);
+                    }
+                }
+            }
+            
+            // Draw words (fill the one corresponding to the selected one)
+            if (i === modeIndex) fill(0);
+            else if (i === queuedModeIndex) fill(queuedFontColor);
+            else noFill();
+
+            if (i !== modeIndex && i === queuedModeIndex) textSize(getInterpValue('queuedFontSize'));
+            else if (i === hoveredIndex && i !== modeIndex) textSize(hoveredFontSize);
+            else textSize(fontSize);
+
+            text(buttonList[i], 0, yMax - fontLineHeight);
+        }
+    pop();
+}
 
 function setMode(newMode) {
     mode = newMode;
@@ -447,6 +389,70 @@ function mergeAfterSwith() {
 }
 
 // -- NOTES ----------------------------------------------------------------------------------------
+
+let interpolationMap = new Map();
+
+function setInterp(key, start, end, interval, gain = 0, bias = 0, iterations = 1, reverse = false, alternate = false) {
+    interpolationMap.set(key,
+        new Interpolation(start, end, interval, gain, bias, iterations, reverse, alternate));
+}
+
+function getInterpValue(key) {
+    return interpolationMap.get(key).currentValue;
+}
+
+function updateInterpolations() {
+    console.log(interpolationMap.size);
+
+    for (let [key, val] of interpolationMap) {
+        val.tick();
+        val.interpolate();
+        if (val.finished) {
+            console.log("Interpolation finished: " + key);
+            interpolationMap.delete(key);
+        }
+    }
+}
+
+class Interpolation {
+    constructor(start, end, interval, gain = 0, bias = 0, iterations = 1,
+                reverse = false, alternate = false) {
+        // Parameters
+        this.start = start;
+        this.end = end;
+        this.interval = interval;
+        this.gain = gain;
+        this.bias = bias;
+        this.iterations = iterations; // < 1 for infinite
+        this.reverse = reverse;
+        this.alternate = alternate;
+
+        // State
+        this.finished = false;
+        this.elapsed = 0;
+        this.isReversing = this.reverse;
+        this.currentValue = this.start;
+    }
+
+    tick() {
+        this.elapsed += deltaTime;
+        if (this.elapsed > this.interval) { // Finished iteration?
+            if (this.iterations != 1) { // Not the last iteration?
+                this.elapsed -= this.interval; // Loop elapsedTime
+                if (this.iterations > 1) this.iterations--; // Decrement finite iteration counter
+                if (this.alternate) this.isReversing = !this.isReversing;
+            }
+            else this.finished = true;
+        }
+    }
+
+    interpolate() {
+        let elapsedPercentage = constrain(this.elapsed / this.interval, 0, 1);
+        if (this.isReversing) elapsedPercentage = 1 - elapsedPercentage;
+        const easedPercentage = ease(elapsedPercentage, this.gain, this.bias);
+        this.currentValue = lerp(this.start, this.end, easedPercentage);
+    }
+}
 
 // Maps input percentage to output percentage https://arxiv.org/abs/2010.09714
 // Visualize: https://www.desmos.com/calculator/t9uwpot2of?lang=en-US
