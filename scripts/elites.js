@@ -16,13 +16,14 @@ let nrLayers;
 let transitionInterp;
 let dotDiameter = baseDotDiameter;
 let linearOffset;
+let currentLDots, layerRadius, layerAngleInc; // Layer data
 
 // Menu parameters
 let font; // (!) Preload
 const fontSize = 64;
 const hoveredFontSize = 70;
 const fontLineHeight = 20;
-const queuedFontColor = 240;
+const queuedFontColor = 220;
 let menuStart; // (!) Setup
 const buttonList = [ CATALYSE, AUDIT, MOLT, MERGE ];
 // Button state
@@ -33,30 +34,36 @@ const outerLayerNrDots = baseNrLayers * layerDotInc;
 const maxCatalyseOffsetInc = 0.003;
 let catalyseLoopDistance; // (!) Setup
 // Catalyse state
-let catalyseOffsetInc = 0;
+let catalyseOffsetInc = 0; // (!) Init required because of modeReset() initial condition
+let catalyseAngleOffset;
 
 // Molt parameters
 const moltLoopDistance = 1;
 const moltNrLayers = baseNrLayers + 1;
 const maxMoltOffsetInc = 0.008;
 // Molt state
-let moltOffsetInc = 0;
+let moltOffsetInc;
+let dotLifetimePercentage;
 
 // Audit parameters
 const amplitude = 6;
 const auditOffsetInc = 0.08;
 let phaseShift; // (!) Setup
 let auditLoopDistance; // (!) Setup
-// Audit state
 
 // Merge parameters
 const maxMergeOffsetInc = 0.05;
 let mergeSwitchDistance; // (!) Setup
 let mergeAnimDistance; // (!) Setup
 let switchDotDiameter; // (!) Setup
+const minXOffset = 0;
+const maxXOffset = layerDistance + baseDotDiameter * 0.5;
 // Merge state
-let mergeOffset = 0;
-let mergeOffsetInc = 0;
+let mergeOffset;
+let mergeOffsetInc = 0; // (!) Init required because of modeReset() initial condition
+let layerXOffset;
+let fadeInOpacity;
+let mult;
 
 // -------------------------------------------------------------------------------------------------
 
@@ -94,48 +101,10 @@ function draw() {
     background(255);
 
     drawMenu();
-
-// Draw dots
-    if (mode === MERGE && mergeOffset < mergeSwitchDistance) mergeBeforeSwitch();
-    else if (mode === MERGE) mergeAfterSwith();
-    else asd();
-
-// Update Interpolations
-    for (let [key, val] of interpolationMap) {
-        val.tick();
-        val.interpolate();
-        if (val.isFinished) interpolationMap.delete(key);
-    }
-
-// Update transition offsets
-    if (transitionInterp) {
-        if (transitionInterp.isFinished) {
-            transitionInterp = null;
-            if (mode !== queuedMode && mode !== MERGE) setMode(queuedMode);
-        }
-        else if (mode === CATALYSE) catalyseOffsetInc = getInterpValue('transition');
-        else if (mode === MOLT) moltOffsetInc = getInterpValue('transition');
-        else if (mode === MERGE) mergeOffsetInc = getInterpValue('transition');
-    }
-
-// Update offsets
-    if (mode === CATALYSE) linearOffset = (linearOffset + catalyseOffsetInc) % catalyseLoopDistance;
-    else if (mode === MOLT) linearOffset = (linearOffset + moltOffsetInc) % 1;
-    else if (mode === AUDIT) {
-        const previous = linearOffset;
-        linearOffset = (linearOffset + auditOffsetInc) % auditLoopDistance;
-        if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
-    }
-    else if (mode === MERGE) {
-        const previous = linearOffset;
-        linearOffset = (linearOffset + mergeOffsetInc) % mergeAnimDistance;
-        if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
-        else {
-            mergeOffset = linearOffset < mergeSwitchDistance ?
-            segmentEase(0, mergeSwitchDistance, linearOffset, 0.2, 0)
-            : segmentEase(mergeSwitchDistance, mergeAnimDistance, linearOffset, 0.6, 0)
-        }
-    }
+    drawDots();
+    updateInterpolations();
+    updateTransitionOffsetIncs();
+    updateOffsets();
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -178,7 +147,6 @@ function drawMenu() {
                         let distance = loopDistance - linearOffset;
                         const avgSpeed = offsetInc * 0.5; // (!) Assumes linear interp
                         const requiredFrames = ceil((distance / avgSpeed) * (100 / 6));
-                        console.log(requiredFrames);
                         transitionInterp = new Interpolation(offsetInc, 0, requiredFrames);
                         interpolationMap.set('transition', transitionInterp);
                     }
@@ -203,12 +171,143 @@ function drawMenu() {
   pop();
 }
 
+function drawDots() {
+// Layers
+    for (let j = 0; j < nrLayers; ++j) {
+        if (mode === CATALYSE) {
+            baseLayer(j);
+            // Layer angle offset
+            catalyseAngleOffset = linearOffset * (outerLayerNrDots / currentLDots) * (nrLayers - j);
+        }
+        else if (mode === AUDIT) {
+            baseLayer(j);
+            // Layer dot diameter
+            const layerOffset = phaseShift + linearOffset - j * 0.35;
+            if (layerOffset > phaseShift && layerOffset < auditLoopDistance) {
+                layerRadius += sin(layerOffset) * amplitude;
+                const layerDotDiameterOffset = 3 + j * 0.5;
+                const minDiameter = baseDotDiameter - layerDotDiameterOffset;
+                const maxDiameter = baseDotDiameter + layerDotDiameterOffset;
+                dotDiameter = map(sin(layerOffset), -1, 1, minDiameter, maxDiameter);
+            }
+            else dotDiameter = baseDotDiameter;
+        }
+        else if (mode === MOLT) {
+            // Layer dots, angle and radius get filled with 3 extra dots every loop
+            currentLDots = ceil(layerDotInc * j + linearOffset * layerDotInc);
+            layerAngleInc = TWO_PI / (currentLDots - 1 + dotLifetimePercentage);
+            layerRadius = layerRadiusInc * j + linearOffset * layerRadiusInc - 5;
+        }
+        else if (mode === MERGE && mergeOffset < mergeSwitchDistance) {
+            fill(0);
+            baseLayer(j);
+            // Layer radius & dot diameter
+            layerRadius -= (mergeOffset * 2) + (2.5 * mergeOffset * j);
+            dotDiameter = baseDotDiameter + mergeOffset * (j - 1);
+        }
+        else if (mode === MERGE) {
+            baseLayer(j);
+            layerRadius = layerRadiusInc * (j + 1) * mult - 5;
+        }
+
+// Layer dots
+        for (let i = 0; i < currentLDots; ++i) {
+            let currentAngleInc = layerAngleInc * i;
+
+            // Offset by layer offset
+            if (mode === CATALYSE) currentAngleInc += catalyseAngleOffset;
+
+            let x = cos(currentAngleInc) * layerRadius + oX;
+            let y = sin(currentAngleInc) * layerRadius + oY;
+
+            // "Kill" outer dots, fade-in "newborn" dots
+            if (mode === MOLT) {
+                if (j === (nrLayers - 1)) fill(0, lerp(255, 0, linearOffset));
+                else if (i === currentLDots - 1) fill(0, lerp(0, 255, dotLifetimePercentage));
+                else fill(0);
+            }
+
+            // Merge before switch xOffset
+            if (mode === MERGE && mergeOffset < mergeSwitchDistance) x += layerXOffset;
+            else if (mode === MERGE) {
+                if (j === 0 && i === 0) fill(0);
+                else fill(0, fadeInOpacity);
+                x += layerXOffset;
+            }
+
+            circle(x, y, dotDiameter);
+        }
+    }
+
+    function baseLayer(layerIndex) {
+        currentLDots = layerDotInc * (layerIndex + 1);
+        layerAngleInc = TWO_PI / currentLDots;
+        layerRadius = layerRadiusInc * (layerIndex + 1) - baseDotDiameter * 0.5;
+    }
+}
+
+function updateInterpolations() {
+    for (let [key, val] of interpolationMap) {
+        val.tick();
+        val.interpolate();
+        if (val.isFinished) interpolationMap.delete(key);
+    }
+}
+
+function updateTransitionOffsetIncs() {
+    if (transitionInterp) {
+        if (transitionInterp.isFinished) {
+            transitionInterp = null;
+            if (mode !== queuedMode && mode !== MERGE) setMode(queuedMode);
+        }
+        else if (mode === CATALYSE) catalyseOffsetInc = getInterpValue('transition');
+        else if (mode === MOLT) moltOffsetInc = getInterpValue('transition');
+        else if (mode === MERGE) mergeOffsetInc = getInterpValue('transition');
+    }
+}
+
+function updateOffsets() {
+    if (mode === CATALYSE) linearOffset = (linearOffset + catalyseOffsetInc) % catalyseLoopDistance;
+    else if (mode === MOLT) {
+        linearOffset = (linearOffset + moltOffsetInc) % 1;
+
+        dotLifetimePercentage = (linearOffset * layerDotInc) % moltLoopDistance;
+    }
+    else if (mode === AUDIT) {
+        const previous = linearOffset;
+        linearOffset = (linearOffset + auditOffsetInc) % auditLoopDistance;
+        if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
+    }
+    else if (mode === MERGE) {
+        const previous = linearOffset;
+        linearOffset = (linearOffset + mergeOffsetInc) % mergeAnimDistance;
+        if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
+        else {
+            mergeOffset = linearOffset < mergeSwitchDistance ?
+            segmentEase(0, mergeSwitchDistance, linearOffset, 0.2, 0)
+            : segmentEase(mergeSwitchDistance, mergeAnimDistance, linearOffset, 0.6, 0)
+        }
+
+        fadeInOpacity = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance, 0, 255);
+        mult = constrain(map(mergeOffset, 0, mergeAnimDistance, 32.1, 1), 1, 32.1); // (!) Magic
+
+        if (mergeOffset > mergeSwitchDistance) {
+            layerXOffset = -map(mergeOffset, 0, mergeAnimDistance, maxXOffset, minXOffset);
+            layerXOffset -= layerRadiusInc * (mult - 1);
+            dotDiameter = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance,
+                                           switchDotDiameter, baseDotDiameter);
+        }
+        else layerXOffset = map(mergeOffset, 0, mergeAnimDistance, minXOffset, maxXOffset);
+    }
+}
+
 function setMode(newMode) {
     mode = newMode;
     if (mode === CATALYSE) modeReset(catalyseOffsetInc, maxCatalyseOffsetInc);
     else if (mode === AUDIT) modeReset();
     else if (mode === MOLT) {
         nrLayers = moltNrLayers;
+        dotLifetimePercentage = 0;
         linearOffset = 0.001; // (!) Fix: 0 value same value as loop end (understande later)
         moltOffsetInc = maxMoltOffsetInc;
     }
@@ -229,121 +328,7 @@ function setMode(newMode) {
     }
 }
 
-function asd() {
-    let currentLDots, layerRadius, layerAngleInc, catalyseAngleOffset; // TODO: state that should be outside
-    let dotLifetimePercentage = (linearOffset * layerDotInc) % moltLoopDistance;
-
-    // Layers
-    for (let j = 0; j < nrLayers; ++j) {
-        if (mode === CATALYSE) {
-            baseLayer(j);
-            catalyseAngleOffset = linearOffset * (outerLayerNrDots / currentLDots) * (nrLayers - j);
-        }
-        else if (mode === AUDIT) {
-            baseLayer(j);
-            const layerOffset = phaseShift + linearOffset - j * 0.35;
-            if (layerOffset > phaseShift && layerOffset < auditLoopDistance) {
-                layerRadius += sin(layerOffset) * amplitude;
-                const layerDotDiameterOffset = 3 + j * 0.5;
-                const minDiameter = baseDotDiameter - layerDotDiameterOffset;
-                const maxDiameter = baseDotDiameter + layerDotDiameterOffset;
-                dotDiameter = map(sin(layerOffset), -1, 1, minDiameter, maxDiameter);
-            }
-            else dotDiameter = baseDotDiameter;
-        }
-        else if (mode === MOLT) {
-            currentLDots = ceil(layerDotInc * j + linearOffset * layerDotInc);
-            layerAngleInc = TWO_PI / (currentLDots - 1 + dotLifetimePercentage);
-            layerRadius = layerRadiusInc * j + linearOffset * layerRadiusInc - 5;
-        }
-
-        // Layer dots
-        for (let i = 0; i < currentLDots; ++i) {
-            let currentAngleInc = layerAngleInc * i;
-
-            // Catalyse offsets layer angles
-            if (mode === CATALYSE) currentAngleInc += catalyseAngleOffset;
-
-            // Molt changes opacity of last layer and recently created dots
-            if (mode === MOLT) {
-                if (j === (nrLayers - 1)) fill(0, lerp(255, 0, linearOffset));
-                else if (i === currentLDots - 1) fill(0, lerp(0, 255, dotLifetimePercentage));
-                else fill(0);
-            }
-
-            let x = cos(currentAngleInc) * layerRadius + oX;
-            let y = sin(currentAngleInc) * layerRadius + oY;
-
-            circle(x, y, dotDiameter);
-        }
-    }
-
-    function baseLayer(layerIndex) {
-        currentLDots = layerDotInc * (layerIndex + 1);
-        layerAngleInc = TWO_PI / currentLDots;
-        layerRadius = layerRadiusInc * (layerIndex + 1) - baseDotDiameter * 0.5;
-    }
-}
-
-function mergeBeforeSwitch() {
-    fill(0);
-    for (let j = 0; j < nrLayers; ++j) {
-        let currentLDots = layerDotInc * (j + 1);
-        let layerAngleInc = TWO_PI / currentLDots;
-        let layerRadius = layerRadiusInc * (j + 1) - 5 - (mergeOffset * 2) - (2.5 * mergeOffset * j);
-
-        // Diameter
-        dotDiameter = baseDotDiameter + mergeOffset * (j - 1);
-
-        // Dots
-        for (let i = 0; i < currentLDots; ++i) {
-            let currentAngleInc = layerAngleInc * i;
-            let x = cos(currentAngleInc) * layerRadius + oX;
-            let y = sin(currentAngleInc) * layerRadius + oY;
-
-            // xOffset
-            let min = 0;
-            let max = layerRadiusInc - 5;
-            x += constrain(map(mergeOffset, 0, mergeAnimDistance, min, max), min, max);
-
-            circle(x, y, dotDiameter);
-        }
-    }
-}
-
-function mergeAfterSwith() {
-    let fadeInOpacity = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance, 0, 255);
-    let mult = constrain(map(mergeOffset, 0, mergeAnimDistance, 32.1, 1), 1, 32.1); // (!) forgotten magic
-
-    // Diameter
-    dotDiameter = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance, switchDotDiameter, baseDotDiameter);
-
-    for (let j = 0; j < nrLayers; ++j) {
-        let currentLDots = layerDotInc * (j + 1);
-        let layerAngleInc = TWO_PI / currentLDots;
-        let layerRadius = layerRadiusInc * (j + 1) * mult - 5;
-
-        for (let i = 0; i < currentLDots; ++i) {
-            let currentAngleInc = layerAngleInc * i;
-            let x = cos(currentAngleInc) * layerRadius + oX;
-            let y = sin(currentAngleInc) * layerRadius + oY;
-
-            // xOffset
-            let min = 0;
-            let max = layerRadiusInc - 5;
-            x -= constrain(map(mergeOffset, 0, mergeAnimDistance, max, min), min, max);
-            x -= layerRadiusInc * (mult - 1);
-
-            // Opacity
-            if (j === 0 && i === 0) fill(0);
-            else fill(0, fadeInOpacity);
-
-            circle(x, y, dotDiameter);
-        }
-    }
-}
-
-// -- NOTES ----------------------------------------------------------------------------------------
+// -- UTILS ----------------------------------------------------------------------------------------
 
 let interpolationMap = new Map();
 
