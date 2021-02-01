@@ -1,3 +1,12 @@
+// TODO: Rerun script on window resize
+// TODO: Make everything time based...
+
+function windowSettings() {
+    weepo = windowWidth;
+}
+
+windowSettings();
+
 // Base parameters
 const baseNrLayers = 8;
 const layerDotInc = 3;
@@ -66,6 +75,10 @@ let fadeInOpacity;
 let mult;
 
 // -------------------------------------------------------------------------------------------------
+
+// window.onload = function() {
+//     drawStuff();
+// }
 
 function preload() {
     font = loadFont('fonts/raleway/Raleway-Bold.ttf');

@@ -35,7 +35,9 @@
 .syllable-dot {
     /* font-family: initial; ?? fixes wrong char on mobile */
     font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; /* idk*/
-    margin: -7.345px;
+    margin: -8.345px;
+    position: relative;
+    bottom: 13px;
     color: black;
     opacity: 0;
 }
@@ -127,8 +129,8 @@
 }
 
 @keyframes expand-syllables {
-    0% { margin: -7.345px; opacity: 0%; }
-    100% { margin: 0; opacity: 100%; }
+    0% { margin: -8.345px; opacity: 0%; }
+    100% { margin: -1px; opacity: 100%; }
 }
 
 @keyframes fade-in {
@@ -139,27 +141,6 @@
 @keyframes stretch-right {
     0% { width: 0%; }
     100% { width: 100%; }
-}
-
-/* Done as a way to "restart" the animation https://css-tricks.com/restart-css-animation/ */
-@keyframes center-word {
-    0% { transform: translate(0px); }
-    100% { transform: translate(28px); }
-}
-
-@keyframes contract-syllables {
-    0% { margin: 0; opacity: 100%; }
-    100% { margin: -7.345px; opacity: 0%; }
-}
-
-@keyframes fade-out {
-    0% { opacity: 100%; }
-    100% { opacity: 0%; }
-}
-
-@keyframes stretch-left {
-    0% { width: 100%; }
-    100% { width: 0%; }
 }
 
 /*-- Responsiveness ------------------------------------------------------------------------------*/
@@ -185,14 +166,16 @@
     }
 
     .syllable-dot {
-        margin: -11.0175px;
+        margin: -12.0175px;
+        position: relative;
+        bottom: 20px;
     }
 
     .expand-syllables-large { animation: expand-syllables-large 0.5s ease-out forwards 0.55s 1; }
 
     @keyframes expand-syllables-large {
-        0% { margin: -11.0175px; opacity: 0%; }
-        100% { margin: 0; opacity: 100%; }
+        0% { margin: -12.0175px; opacity: 0%; }
+        100% { margin: -1px; opacity: 100%; }
     }
 
     .center-block {
