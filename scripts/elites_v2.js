@@ -3,7 +3,7 @@ let baseNrLayers, layerDotInc, layerDistance, baseDotDiameter, layerRadiusInc, o
 let CATALYSE, AUDIT, MOLT, MERGE, TRANSITION, QUEUED_FONT; // No string errors
 // Base state
 let mode, queuedMode, nrLayers, transitionInterp, dotDiameter, linearOffset;
-let currentLDots, layerRadius, layerAngleInc; // Layer data
+let currentLDots, layerAngleInc, layerRadius; // Layer data
 
 // Menu parameters
 let font, fontSize, hoveredFontSize, fontLineHeight, queuedFontColor, buttonList, menuStart;
