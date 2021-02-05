@@ -35,11 +35,11 @@ function preload() {
     createCanvas(0, 0);
 }
 
-function setup() { init(); }
+function setup() { onResize(); }
 
-window.addEventListener("resize", init);
+window.addEventListener("resize", onResize);
 
-function init() {
+function onResize() {
     // Base parameters
     baseNrLayers = 8;
     layerDotInc = 3;
@@ -291,8 +291,8 @@ function updateOffsets() {
         if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
         else {
             mergeOffset = linearOffset < mergeSwitchDistance ?
-            segmentEase(0, mergeSwitchDistance, linearOffset, 0.2, 0)
-            : segmentEase(mergeSwitchDistance, mergeAnimDistance, linearOffset, 0.6, 0)
+                segmentEase(0, mergeSwitchDistance, linearOffset, 0.2, 0)
+                : segmentEase(mergeSwitchDistance, mergeAnimDistance, linearOffset, 0.6, 0);
         }
 
         fadeInOpacity = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance, 0, 255);
