@@ -29,3 +29,7 @@
 .poem-title:hover {
     color: #707070;
 }
+
+.poem-title:hover > .special {
+    color: #568fcf;
+}

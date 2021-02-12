@@ -126,7 +126,7 @@ function drawMenu() {
     stroke(0);
     strokeWeight(1);
     textSize(fontSize); // (!) Needed for textWidth calculations
-    for (i = 0; i < buttonList.length; ++i) {
+    for (let i = 0; i < buttonList.length; ++i) {
         const iButton = buttonList[i];
         const halfWordWidth = textWidth(iButton) * 0.5;
         const xMax = oX + halfWordWidth + 10; // (!) Right side is a bit smaller for some reason
