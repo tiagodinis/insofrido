@@ -29,7 +29,10 @@ export class Interpolator {
         for (let [key, val] of this.interpolationMap) {
             val.tick();
             val.interpolate();
-            if (val.isFinished) this.interpolationMap.delete(key);
+            if (val.isFinished) {
+                if (val.onFinish) val.onFinish(val);
+                this.interpolationMap.delete(key);
+            }
         }
     }
 }
@@ -64,10 +67,7 @@ export class Interpolation {
                 if (this.iterations > 1) this.iterations--; // Decrement finite iteration counter
                 if (this.alternate) this.isReversing = !this.isReversing;
             }
-            else {
-                this.isFinished = true;
-                if (this.onFinish) this.onFinish(this);
-            }
+            else this.isFinished = true;
         }
     }
 
@@ -85,7 +85,7 @@ export class Interpolation {
 
 // Maps input percentage to output percentage https://arxiv.org/abs/2010.09714
 // Visualize: https://www.desmos.com/calculator/t9uwpot2of?lang=en-US
-function ease(x, gain, bias, clamp = true)
+export function ease(x, gain, bias, clamp = true)
 {
     // Gain received as an easy to use [-1, 1] range
     // which is denormalized into a [0,∞] range to use in the Barron generalization
@@ -102,7 +102,7 @@ function ease(x, gain, bias, clamp = true)
 }
 
 // Eases smaller segments where x contained in [start, end], and also a bigger range
-function segmentEase(start, end, x, gain, bias) {
+export function segmentEase(start, end, x, gain, bias) {
     let offset = end - start;
     return start + offset * ease((x - start) / offset, gain, bias);
 }

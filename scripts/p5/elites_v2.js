@@ -1,8 +1,11 @@
 // TODO
-// Use interpolator for offsetIncs
-    // Start by using a single state variable for offsetInc
+// FSM for general state with plugins for specific
+// Preload and resize stuff
+    // On resize, dot diameter not proper
+// Dimensions with different resolutions
+    // Try changing baseNrLayers (only problem on catalyse)
 
-import {Interpolator} from '../p5/modules/Interpolator.js';
+import {Interpolator, segmentEase} from '../p5/modules/Interpolator.js';
 import {FSM, StateTransition} from '../p5/modules/FSM.js';
 
 // Services
@@ -10,9 +13,9 @@ let interpolator, fsm; // preload
 // Base parameters
 let baseNrLayers, layerDotInc, layerDistance, baseDotDiameter, layerRadiusInc, oX, oY;
 const MODES = Object.freeze({"CATALYSE":"Catalisar", "AUDIT":"Auditar", "MOLT":"Podar","MERGE":"Unir"});
-const INTERPS = Object.freeze({"TRANSITION":"TRANSITION", "QUEUED_FONT":"QUEUED_FONT"});
+const INTERPS = Object.freeze({"TRANS_ACCEL":"TRANS_ACCEL","TRANS_DECEL":"TRANS_DECEL", "QUEUED_FONT":"QUEUED_FONT"});
 // Base state
-let mode, queuedMode, nrLayers, transitionInterp, dotDiameter, linearOffset;
+let mode, queuedMode, nrLayers, dotDiameter, linearOffset, offsetInc;
 let currentLDots, layerAngleInc, layerRadius; // Layer data
 
 // Menu parameters
@@ -31,15 +34,13 @@ let moltLoopDistance, moltNrLayers, maxMoltOffsetInc;
 let dotLifetimePercentage;
 
 // Audit parameters
-let amplitude, auditOffsetInc, phaseShift, auditLoopDistance;
+let amplitude, maxAuditOffsetInc, phaseShift, auditLoopDistance;
 
 // Merge parameters
 let maxMergeOffsetInc, mergeSwitchDistance, mergeAnimDistance, switchDotDiameter, minXOffset, maxXOffset;
 // Merge state
-let mergeOffset, mergeOffsetInc, layerXOffset, fadeInOpacity, mult;
+let mergeOffset, layerXOffset, fadeInOpacity, mult;
 
-
-let offsetInc;
 // -------------------------------------------------------------------------------------------------
 
 // class ModeState {
@@ -102,7 +103,7 @@ function onResize() {
     maxMoltOffsetInc = 0.00048;
     // Audit parameters
     amplitude = 6;
-    auditOffsetInc = 0.0048;
+    maxAuditOffsetInc = 0.0048;
     phaseShift = PI;
     auditLoopDistance = TWO_PI + phaseShift;
     // Merge parameters
@@ -113,8 +114,6 @@ function onResize() {
     switchDotDiameter -= mergeSwitchDistance * baseNrLayers * 4 + baseDotDiameter; // (!) Forgotten magic
     minXOffset = 0;
     maxXOffset = layerDistance + baseDotDiameter * 0.5;
-    // Merge state
-    mergeOffsetInc = 0; // (!) Init required because of modeReset() initial condition
 
     // Origin coords
     oX = (window.innerWidth * 0.5) - dotDiameter * 0.5;
@@ -132,14 +131,13 @@ function draw() {
 
     drawMenu();
     drawDots();
-    updateInterpolations();
-    updateTransitionOffsetIncs();
     updateOffsets();
-
     interpolator.update();
 }
 
 // -------------------------------------------------------------------------------------------------
+
+let transitionFontSize = hoveredFontSize;
 
 function drawMenu() {
   push();
@@ -168,22 +166,24 @@ function drawMenu() {
             if (mouseIsPressed) { // Is pressing?
                 if (iButton !== mode && iButton !== queuedMode) { // Can queue a different mode?
                     queuedMode = iButton;
-                    interpolationMap.set(INTERPS.QUEUED_FONT,
-                        new Interpolation(hoveredFontSize, fontSize, 500, 0.4, 0, 1, false, true));
+
+                    transitionFontSize = hoveredFontSize;
+                    interpolator.add(INTERPS.QUEUED_FONT, hoveredFontSize, fontSize, 500, 0.4, 0, 1, false, true)
+                        .onInterpolate = (i) => transitionFontSize = i.value;
 
                     // Set deceleration interp if one of the available options was pressed
                     if (mode === MODES.CATALYSE) setDeceleration(catalyseLoopDistance, maxCatalyseOffsetInc);
                     else if (mode === MODES.MOLT) setDeceleration(moltLoopDistance, maxMoltOffsetInc);
 
-                    function setDeceleration(loopDistance, offsetInc) {
+                    function setDeceleration(loopDistance, maxOffsetInc) {
                         let distance = loopDistance - linearOffset;
-                        const avgSpeed = offsetInc * 0.5; // (!) Assumes linear interp
+                        const avgSpeed = maxOffsetInc * 0.5; // (!) Assumes linear interp
                         const requiredMS = ceil(distance / avgSpeed);
-                        transitionInterp = new Interpolation(offsetInc, 0, requiredMS);
-                        interpolationMap.set(INTERPS.TRANSITION, transitionInterp);
 
-                        // let interp = interpolator.add(INTERPS.TRANSITION, offsetInc, 0, requiredMS);
-                        // interp.onInterpolate = (i) => titleOpacity = i.value;
+                        let interp = interpolator.add(INTERPS.TRANS_DECEL, maxOffsetInc, 0, requiredMS);
+                        interp.onInterpolate = (i) => offsetInc = i.value;
+                        interp.onFinish = () => {
+                            if (mode !== queuedMode && mode !== MODES.MERGE) setMode(queuedMode); }
                     }
                 }
             }
@@ -195,8 +195,8 @@ function drawMenu() {
         else fill(255);
 
         // Word size
-        if (iButton !== mode && iButton === queuedMode && interpolationMap.has(INTERPS.QUEUED_FONT))
-            textSize(getInterpValue(INTERPS.QUEUED_FONT));
+        if (iButton !== mode && iButton === queuedMode && interpolator.has(INTERPS.QUEUED_FONT))
+            textSize(transitionFontSize);
         else if (iButton === hoveredButton && iButton !== mode && iButton !== queuedMode)
             textSize(hoveredFontSize);
         else textSize(fontSize);
@@ -205,6 +205,9 @@ function drawMenu() {
     }
   pop();
 }
+
+// // Layer loop
+// // 
 
 function drawDots() {
 // Layers
@@ -281,26 +284,6 @@ function drawDots() {
     }
 }
 
-function updateInterpolations() {
-    for (let [key, val] of interpolationMap) {
-        val.tick();
-        val.interpolate();
-        if (val.isFinished) interpolationMap.delete(key);
-    }
-}
-
-function updateTransitionOffsetIncs() {
-    if (transitionInterp) {
-        if (transitionInterp.isFinished) {
-            transitionInterp = null;
-            if (mode !== queuedMode && mode !== MODES.MERGE) setMode(queuedMode);
-        }
-        else if (mode === MODES.CATALYSE) offsetInc = getInterpValue(INTERPS.TRANSITION);
-        else if (mode === MODES.MOLT) offsetInc = getInterpValue(INTERPS.TRANSITION);
-        else if (mode === MODES.MERGE) mergeOffsetInc = getInterpValue(INTERPS.TRANSITION);
-    }
-}
-
 function updateOffsets() {
     if (mode === MODES.CATALYSE) {
         linearOffset = (linearOffset + deltaTime * offsetInc) % catalyseLoopDistance;
@@ -312,12 +295,12 @@ function updateOffsets() {
     }
     else if (mode === MODES.AUDIT) {
         const previous = linearOffset;
-        linearOffset = (linearOffset + deltaTime * auditOffsetInc) % auditLoopDistance;
+        linearOffset = (linearOffset + deltaTime * offsetInc) % auditLoopDistance;
         if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
     }
     else if (mode === MODES.MERGE) {
         const previous = linearOffset;
-        linearOffset = (linearOffset + deltaTime * mergeOffsetInc) % mergeAnimDistance;
+        linearOffset = (linearOffset + deltaTime * offsetInc) % mergeAnimDistance;
         if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
         else {
             mergeOffset = linearOffset < mergeSwitchDistance ?
@@ -340,101 +323,32 @@ function updateOffsets() {
 
 function setMode(newMode) {
     mode = newMode;
-    if (mode === MODES.CATALYSE) modeReset(offsetInc, maxCatalyseOffsetInc);
-    else if (mode === MODES.AUDIT) modeReset();
+    if (mode === MODES.CATALYSE) modeReset(maxCatalyseOffsetInc);
+    else if (mode === MODES.AUDIT) {
+        offsetInc = maxAuditOffsetInc;
+        modeReset();
+    }
     else if (mode === MODES.MOLT) {
         nrLayers = moltNrLayers;
         dotLifetimePercentage = 0;
-        linearOffset = maxMoltOffsetInc; // (!) Fix: 0 value same value as loop end (understand later)
+        linearOffset = 0.00000001; // (!) Fix: 0 value same value as loop end (understand later)
         offsetInc = maxMoltOffsetInc;
     }
     else if (mode === MODES.MERGE) {
         mergeOffset = 0;
-        modeReset(mergeOffsetInc, maxMergeOffsetInc);
+        modeReset(maxMergeOffsetInc);
     }
 
-    function modeReset(offsetInc, maxOffsetInc) {
+    function modeReset(maxOffsetInc) {
         fill(0);
         nrLayers = baseNrLayers;
         linearOffset = 0;
-        if (offsetInc !== undefined) {
+        if (maxOffsetInc !== undefined) {
             offsetInc = 0;
-            transitionInterp = new Interpolation(0, maxOffsetInc, 1000);
-            interpolationMap.set(INTERPS.TRANSITION, transitionInterp);
+            interpolator.add(INTERPS.TRANS_ACCEL, 0, maxOffsetInc, 1000)
+                .onInterpolate = (i) => offsetInc = i.value;
         }
     }
-}
-
-// -- UTILS ----------------------------------------------------------------------------------------
-
-let interpolationMap = new Map();
-
-function getInterpValue(key) {
-    return interpolationMap.get(key).currentValue;
-}
-
-class Interpolation {
-    constructor(start, end, interval, gain = 0, bias = 0, iterations = 1,
-                reverse = false, alternate = false) {
-        // Parameters
-        this.start = start;
-        this.end = end;
-        this.interval = interval;
-        this.gain = gain;
-        this.bias = bias;
-        this.iterations = iterations; // < 1 for infinite
-        this.reverse = reverse;
-        this.alternate = alternate;
-
-        // State
-        this.isFinished = false;
-        this.elapsed = 0;
-        this.isReversing = this.reverse;
-        this.currentValue = this.start;
-    }
-
-    tick() {
-        this.elapsed += deltaTime;
-        if (this.elapsed > this.interval) { // Finished iteration?
-            if (this.iterations != 1) { // Not the last iteration?
-                this.elapsed -= this.interval; // Loop elapsedTime
-                if (this.iterations > 1) this.iterations--; // Decrement finite iteration counter
-                if (this.alternate) this.isReversing = !this.isReversing;
-            }
-            else this.isFinished = true;
-        }
-    }
-
-    interpolate() {
-        let elapsedPercentage = constrain(this.elapsed / this.interval, 0, 1);
-        if (this.isReversing) elapsedPercentage = 1 - elapsedPercentage;
-        const easedPercentage = ease(elapsedPercentage, this.gain, this.bias);
-        this.currentValue = lerp(this.start, this.end, easedPercentage);
-    }
-}
-
-// Maps input percentage to output percentage https://arxiv.org/abs/2010.09714
-// Visualize: https://www.desmos.com/calculator/t9uwpot2of?lang=en-US
-function ease(x, gain, bias, clamp = true)
-{
-    // Gain received as an easy to use [-1, 1] range
-    // which is denormalized into a [0,∞] range to use in the Barron generalization
-    const E = 0.0000000001;
-    const denormalizedGain = gain <= 0 ?
-        (- (pow(- gain, 0.5) / 2) + 0.5) * 2
-        : -1 / ((((pow(gain, 0.5) / 2) + 0.5) - 0.5) * 2 - 1 - E);
-
-    let value = x < bias ?
-        (bias * x) / (x + denormalizedGain * (bias - x) + E)
-        : ((1 - bias) * (x - 1)) / (1 - x - denormalizedGain * (bias - x) + E) + 1;
-
-    return clamp ? constrain(value, 0, 1) : value;
-}
-
-// Eases smaller segments where x contained in [start, end], and also a bigger range
-function segmentEase(start, end, x, gain, bias) {
-    let offset = end - start;
-    return start + offset * ease((x - start) / offset, gain, bias);
 }
 
 // (!) TEMP, better ways to solve the module problem
