@@ -1,79 +1,28 @@
-// TODO
-// FSM for general state with plugins for specific
-// Preload and resize stuff
-    // On resize, dot diameter not proper
-// Dimensions with different resolutions
-    // Try changing baseNrLayers (only problem on catalyse)
-
 import {Interpolator, segmentEase} from '../p5/modules/Interpolator.js';
-import {FSM, StateTransition} from '../p5/modules/FSM.js';
 
 // Services
-let interpolator, fsm; // preload
+let interpolator = new Interpolator();
 // Base parameters
-let baseNrLayers, layerDotInc, layerDistance, baseDotDiameter, layerRadiusInc, oX, oY;
 const MODES = Object.freeze({"CATALYSE":"Catalisar", "AUDIT":"Auditar", "MOLT":"Podar","MERGE":"Unir"});
-const INTERPS = Object.freeze({"TRANS_ACCEL":"TRANS_ACCEL","TRANS_DECEL":"TRANS_DECEL", "QUEUED_FONT":"QUEUED_FONT"});
+const INTERPS = Object.freeze({"TRANS_ACCEL":"TRANS_ACCEL","TRANS_DECEL":"TRANS_DECEL", "QUEUED_FONT":"QUEUED_FONT", "INTRO_FADE_OUT":"INTRO_FADE_OUT", "INTRO_FADE_IN":"INTRO_FADE_IN"});
+const SCREEN = Object.freeze({"NORMAL":"NORMAL", "SMALL_1":"SMALL_1", "SMALL_2":"SMALL_2",});
+let baseNrLayers, layerDotInc, layerDistance, baseDotDiameter, layerRadiusInc, oX, oY;
 // Base state
 let mode, queuedMode, nrLayers, dotDiameter, linearOffset, offsetInc;
-let currentLDots, layerAngleInc, layerRadius; // Layer data
 
-// Menu parameters
-let font, fontSize, hoveredFontSize, fontLineHeight, queuedFontColor, buttonList, menuStart;
-// Button state
-let hoveredButton;
-
-// Catalyse parameters
-let outerLayerNrDots, maxCatalyseOffsetInc, catalyseLoopDistance;
-// Catalyse state
-let catalyseAngleOffset;
-
-// Molt parameters
-let moltLoopDistance, moltNrLayers, maxMoltOffsetInc;
-// Molt state
-let dotLifetimePercentage;
-
-// Audit parameters
-let amplitude, maxAuditOffsetInc, phaseShift, auditLoopDistance;
-
-// Merge parameters
-let maxMergeOffsetInc, mergeSwitchDistance, mergeAnimDistance, switchDotDiameter, minXOffset, maxXOffset;
-// Merge state
-let mergeOffset, layerXOffset, fadeInOpacity, mult;
-
-// -------------------------------------------------------------------------------------------------
-
-// class ModeState {
-//     constructor() {
-
-//     }
-
-//     drawDots() {
-
-//     }
-// }
+// -- SETUP & MAINLOOP -----------------------------------------------------------------------------
 
 function preload() {
     font = loadFont('fonts/raleway/Raleway-Bold.ttf');
-
-    interpolator = new Interpolator();
-
-    // let stateMap = new Map([
-    //     [MODES.CATALYSE, new ModeState()],
-    // ]);
-    // fsm = new FSM(stateMap, stateMap.get(MODES.CATALYSE));
-    // fsm.currentState.onEnter();
 
     createCanvas(0, 0);
 }
 
 function setup() { onResize(); }
-
 window.addEventListener("resize", onResize);
 
 function onResize() {
     // Base parameters
-    baseNrLayers = 8;
     layerDotInc = 3;
     layerDistance = 10;
     baseDotDiameter = 10;
@@ -82,19 +31,22 @@ function onResize() {
     queuedMode = MODES.CATALYSE;
     dotDiameter = baseDotDiameter;
     // Menu parameters
-    const isSmallScreen = window.innerHeight < 700;
-    fontSize = isSmallScreen ? 32 : 64;
-    hoveredFontSize = isSmallScreen ? 35 : 70;
-    fontLineHeight = isSmallScreen ? 20 : 20;
+    const screenSize = window.innerHeight < 630 ? SCREEN.SMALL_2
+                     : window.innerHeight < 750 ? SCREEN.SMALL_1
+                     : NORMAL;
+    fontSize = screenSize === NORMAL ? 64 : 32;
+    hoveredFontSize = screenSize === NORMAL ? 70 : 35;
+    fontLineHeight = screenSize === NORMAL ? 20 : 15;
+    baseNrLayers = screenSize === SCREEN.SMALL_2 ? 6 : 8;
     queuedFontColor = 220;
     buttonList = [ MODES.CATALYSE, MODES.AUDIT, MODES.MOLT, MODES.MERGE ];
     const menuHeight = buttonList.length * (fontSize + fontLineHeight);
     const halfHeight = window.innerHeight * 0.5;
-    menuStart = halfHeight + (halfHeight - menuHeight) * (isSmallScreen ? 0.8 : 0.5);
+    menuStart = halfHeight + (halfHeight - menuHeight) * (screenSize === NORMAL ? 0.8 : 0.7);
     // Catalyse parameters
     outerLayerNrDots = baseNrLayers * layerDotInc;
     maxCatalyseOffsetInc = 0.00018;
-    catalyseLoopDistance = HALF_PI / 6;
+    catalyseLoopDistance = HALF_PI / (baseNrLayers * 0.75);
     // Catalyse state
     offsetInc = 0; // (!) Init required because of modeReset() initial condition
     // Molt parameters
@@ -123,22 +75,193 @@ function onResize() {
     noStroke();
     textFont(font);
     textAlign(CENTER);
-    setMode(MODES.CATALYSE);
+    if (started) setMode(MODES.CATALYSE);
 }
 
 function draw() {
     background(255);
 
-    drawMenu();
-    drawDots();
-    updateOffsets();
+    if (started) {
+        drawMenu();
+        fill(0, introOpacity);
+        drawDots();
+        currentMode.onUpdateOffset();
+    } else drawIntro();
+
     interpolator.update();
 }
 
-// -------------------------------------------------------------------------------------------------
+let introOpacity = 255;
+let started = false;
+function drawIntro() {
+    fill(0, introOpacity);
+    cursor(HAND);
+    textSize(64);
+    text("E L I T E S", window.innerWidth * 0.5, window.innerHeight * 0.4);
+    textSize(16);
+    fill(0, introOpacity);
+    text("Toca para começar", window.innerWidth * 0.5, window.innerHeight * 0.43);
 
+    if (mouseIsPressed) {
+        let interp = interpolator.add(INTERPS.INTRO_FADE_OUT, 1, 0, 700);
+        interp.onInterpolate = (i) => introOpacity = lerp(0, 255, i.value);
+        interp.onFinish = () => {
+            started = true;
+            cursor(ARROW);
+            fill(0);
+            setMode(MODES.CATALYSE);
+            let interp = interpolator.add(INTERPS.INTRO_FADE_IN, 0, 1, 1000);
+            interp.onInterpolate = (i) => introOpacity = lerp(0, 255, i.value);
+        }
+    }
+}
+
+// -- DRAW MODES -----------------------------------------------------------------------------------
+
+let currentLDots, layerAngleInc, layerRadius, currentAngleInc, x, y;
+function drawDots() {
+    for (let j = 0; j < nrLayers; ++j) {
+        if (currentMode.onLayerLoop) currentMode.onLayerLoop(j);
+        for (let i = 0; i < currentLDots; ++i) {
+            currentAngleInc = layerAngleInc * i;
+            if (currentMode.onDotAngleInc) currentMode.onDotAngleInc();
+            x = cos(currentAngleInc) * layerRadius + oX;
+            y = sin(currentAngleInc) * layerRadius + oY;
+            if (currentMode.onDotPosition) currentMode.onDotPosition(j, i);
+            circle(x, y, dotDiameter);
+        }
+    }
+}
+
+// Catalyse parameters, state & logic
+let outerLayerNrDots, maxCatalyseOffsetInc, catalyseLoopDistance;
+let catalyseAngleOffset;
+function catalyseOnLayerLoop(layerIndex) {
+    baseLayer(layerIndex);
+    // Layer angle offset
+    catalyseAngleOffset = linearOffset * (outerLayerNrDots / currentLDots) * (nrLayers - layerIndex);
+}
+function catalyseOnDotAngleInc() {
+    currentAngleInc += catalyseAngleOffset;
+}
+function catalyseOnUpdate() {
+    linearOffset = (linearOffset + deltaTime * offsetInc) % catalyseLoopDistance;
+}
+
+// Audit parameters & logic
+let amplitude, maxAuditOffsetInc, phaseShift, auditLoopDistance;
+function auditOnLayerLoop(layerIndex) {
+    baseLayer(layerIndex);
+    // Layer dot diameter
+    const layerOffset = phaseShift + linearOffset - layerIndex * 0.35;
+    if (layerOffset > phaseShift && layerOffset < auditLoopDistance) {
+        layerRadius += sin(layerOffset) * amplitude;
+        const layerDotDiameterOffset = 3 + layerIndex * 0.5;
+        const minDiameter = baseDotDiameter - layerDotDiameterOffset;
+        const maxDiameter = baseDotDiameter + layerDotDiameterOffset;
+        dotDiameter = map(sin(layerOffset), -1, 1, minDiameter, maxDiameter);
+    }
+    else dotDiameter = baseDotDiameter;
+}
+function auditOnUpdate() {
+    const previous = linearOffset;
+    linearOffset = (linearOffset + deltaTime * offsetInc) % auditLoopDistance;
+    if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
+}
+
+// Molt parameters, state & logic
+let moltLoopDistance, moltNrLayers, maxMoltOffsetInc;
+let dotLifetimePercentage;
+function moltOnLayerLoop(layerIndex) {
+    // Layer dots, angle and radius get filled with 3 extra dots every loop
+    currentLDots = ceil(layerDotInc * layerIndex + linearOffset * layerDotInc);
+    layerAngleInc = TWO_PI / (currentLDots - 1 + dotLifetimePercentage);
+    layerRadius = layerRadiusInc * layerIndex + linearOffset * layerRadiusInc - 5;
+}
+function moltOnDotPosition(layerIndex, dotIndex) {
+    // "Kill" outer dots, fade-in "newborn" dots
+    if (layerIndex === (nrLayers - 1)) fill(0, lerp(255, 0, linearOffset));
+    else if (dotIndex === currentLDots - 1) fill(0, lerp(0, 255, dotLifetimePercentage));
+    else fill(0);
+}
+function moltOnUpdate() {
+    linearOffset = (linearOffset + deltaTime * offsetInc) % moltLoopDistance;
+    dotLifetimePercentage = (linearOffset * layerDotInc) % moltLoopDistance;
+}
+
+// Merge parameters, state & logic
+let maxMergeOffsetInc, mergeSwitchDistance, mergeAnimDistance, switchDotDiameter, minXOffset, maxXOffset;
+let mergeOffset, layerXOffset, fadeInOpacity, mult;
+function mergeOnLayerLoop(layerIndex) {
+    baseLayer(layerIndex);
+
+    if (mergeOffset < mergeSwitchDistance) {
+        fill(0);
+        // Layer radius & dot diameter
+        layerRadius -= (mergeOffset * 2) + (2.5 * mergeOffset * layerIndex);
+        dotDiameter = baseDotDiameter + mergeOffset * (layerIndex - 1);
+    }
+    else layerRadius = layerRadiusInc * (layerIndex + 1) * mult - 5;
+}
+function mergeOnDotPosition(layerIndex, dotIndex) {
+    // Merge before switch xOffset
+    if (mergeOffset < mergeSwitchDistance) x += layerXOffset;
+    else{
+        if (layerIndex === 0 && dotIndex === 0) fill(0);
+        else fill(0, fadeInOpacity);
+        x += layerXOffset;
+    }
+}
+function mergeOnUpdate() {
+    const previous = linearOffset;
+    linearOffset = (linearOffset + deltaTime * offsetInc) % mergeAnimDistance;
+    if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
+    else {
+        mergeOffset = linearOffset < mergeSwitchDistance ?
+            segmentEase(0, mergeSwitchDistance, linearOffset, 0.2, 0)
+            : segmentEase(mergeSwitchDistance, mergeAnimDistance, linearOffset, 0.6, 0);
+    }
+
+    fadeInOpacity = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance, 0, 255);
+    mult = constrain(map(mergeOffset, 0, mergeAnimDistance, 32.1, 1), 1, 32.1); // (!) Forgotten magic
+
+    if (mergeOffset > mergeSwitchDistance) {
+        layerXOffset = -map(mergeOffset, 0, mergeAnimDistance, maxXOffset, minXOffset);
+        layerXOffset -= layerRadiusInc * (mult - 1);
+        dotDiameter = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance,
+                                       switchDotDiameter, baseDotDiameter);
+    }
+    else layerXOffset = map(mergeOffset, 0, mergeAnimDistance, minXOffset, maxXOffset);
+}
+
+function baseLayer(layerIndex) {
+    currentLDots = layerDotInc * (layerIndex + 1);
+    layerAngleInc = TWO_PI / currentLDots;
+    layerRadius = layerRadiusInc * (layerIndex + 1) - baseDotDiameter * 0.5;
+}
+
+class ModeState {
+    constructor(onLayerLoop, onDotAngleInc, onDotPosition, onUpdateOffset) {
+        this.onLayerLoop = onLayerLoop;
+        this.onDotAngleInc = onDotAngleInc;
+        this.onDotPosition = onDotPosition;
+        this.onUpdateOffset = onUpdateOffset;
+    }
+}
+
+let currentMode;
+let modeMap = new Map([
+    [MODES.CATALYSE, new ModeState(catalyseOnLayerLoop, catalyseOnDotAngleInc, null, catalyseOnUpdate)],
+    [MODES.AUDIT, new ModeState(auditOnLayerLoop, null, null, auditOnUpdate)],
+    [MODES.MOLT, new ModeState(moltOnLayerLoop, null, moltOnDotPosition, moltOnUpdate)],
+    [MODES.MERGE, new ModeState(mergeOnLayerLoop, null, mergeOnDotPosition, mergeOnUpdate)]]);
+
+// -- MENU -----------------------------------------------------------------------------------------
+// Parameters
+let font, fontSize, hoveredFontSize, fontLineHeight, queuedFontColor, buttonList, menuStart;
+// State
+let hoveredButton;
 let transitionFontSize = hoveredFontSize;
-
 function drawMenu() {
   push();
     translate(window.innerWidth * 0.5, menuStart);
@@ -168,7 +291,8 @@ function drawMenu() {
                     queuedMode = iButton;
 
                     transitionFontSize = hoveredFontSize;
-                    interpolator.add(INTERPS.QUEUED_FONT, hoveredFontSize, fontSize, 500, 0.4, 0, 1, false, true)
+                    interpolator.add(INTERPS.QUEUED_FONT,
+                        hoveredFontSize, fontSize, 500, 0.4, 0, 1, false, true)
                         .onInterpolate = (i) => transitionFontSize = i.value;
 
                     // Set deceleration interp if one of the available options was pressed
@@ -178,19 +302,20 @@ function drawMenu() {
                     function setDeceleration(loopDistance, maxOffsetInc) {
                         let distance = loopDistance - linearOffset;
                         const avgSpeed = maxOffsetInc * 0.5; // (!) Assumes linear interp
-                        const requiredMS = ceil(distance / avgSpeed);
+                        const requiredMS = floor(distance / avgSpeed);
 
                         let interp = interpolator.add(INTERPS.TRANS_DECEL, maxOffsetInc, 0, requiredMS);
                         interp.onInterpolate = (i) => offsetInc = i.value;
                         interp.onFinish = () => {
-                            if (mode !== queuedMode && mode !== MODES.MERGE) setMode(queuedMode); }
+                            if (mode !== queuedMode) setMode(queuedMode); }
                     }
                 }
             }
         }
         
         // Word color
-        if (iButton === mode) fill(0);
+        stroke(0, introOpacity);
+        if (iButton === mode) fill(0, introOpacity);
         else if (iButton === queuedMode) fill(queuedFontColor);
         else fill(255);
 
@@ -206,123 +331,10 @@ function drawMenu() {
   pop();
 }
 
-// // Layer loop
-// // 
-
-function drawDots() {
-// Layers
-    for (let j = 0; j < nrLayers; ++j) {
-        if (mode === MODES.CATALYSE) {
-            baseLayer(j);
-            // Layer angle offset
-            catalyseAngleOffset = linearOffset * (outerLayerNrDots / currentLDots) * (nrLayers - j);
-        }
-        else if (mode === MODES.AUDIT) {
-            baseLayer(j);
-            // Layer dot diameter
-            const layerOffset = phaseShift + linearOffset - j * 0.35;
-            if (layerOffset > phaseShift && layerOffset < auditLoopDistance) {
-                layerRadius += sin(layerOffset) * amplitude;
-                const layerDotDiameterOffset = 3 + j * 0.5;
-                const minDiameter = baseDotDiameter - layerDotDiameterOffset;
-                const maxDiameter = baseDotDiameter + layerDotDiameterOffset;
-                dotDiameter = map(sin(layerOffset), -1, 1, minDiameter, maxDiameter);
-            }
-            else dotDiameter = baseDotDiameter;
-        }
-        else if (mode === MODES.MOLT) {
-            // Layer dots, angle and radius get filled with 3 extra dots every loop
-            currentLDots = ceil(layerDotInc * j + linearOffset * layerDotInc);
-            layerAngleInc = TWO_PI / (currentLDots - 1 + dotLifetimePercentage);
-            layerRadius = layerRadiusInc * j + linearOffset * layerRadiusInc - 5;
-        }
-        else if (mode === MODES.MERGE && mergeOffset < mergeSwitchDistance) {
-            fill(0);
-            baseLayer(j);
-            // Layer radius & dot diameter
-            layerRadius -= (mergeOffset * 2) + (2.5 * mergeOffset * j);
-            dotDiameter = baseDotDiameter + mergeOffset * (j - 1);
-        }
-        else if (mode === MODES.MERGE) {
-            baseLayer(j);
-            layerRadius = layerRadiusInc * (j + 1) * mult - 5;
-        }
-
-// Layer dots
-        for (let i = 0; i < currentLDots; ++i) {
-            let currentAngleInc = layerAngleInc * i;
-
-            // Offset by layer offset
-            if (mode === MODES.CATALYSE) currentAngleInc += catalyseAngleOffset;
-
-            let x = cos(currentAngleInc) * layerRadius + oX;
-            let y = sin(currentAngleInc) * layerRadius + oY;
-
-            // "Kill" outer dots, fade-in "newborn" dots
-            if (mode === MODES.MOLT) {
-                if (j === (nrLayers - 1)) fill(0, lerp(255, 0, linearOffset));
-                else if (i === currentLDots - 1) fill(0, lerp(0, 255, dotLifetimePercentage));
-                else fill(0);
-            }
-
-            // Merge before switch xOffset
-            if (mode === MODES.MERGE && mergeOffset < mergeSwitchDistance) x += layerXOffset;
-            else if (mode === MODES.MERGE) {
-                if (j === 0 && i === 0) fill(0);
-                else fill(0, fadeInOpacity);
-                x += layerXOffset;
-            }
-
-            circle(x, y, dotDiameter);
-        }
-    }
-
-    function baseLayer(layerIndex) {
-        currentLDots = layerDotInc * (layerIndex + 1);
-        layerAngleInc = TWO_PI / currentLDots;
-        layerRadius = layerRadiusInc * (layerIndex + 1) - baseDotDiameter * 0.5;
-    }
-}
-
-function updateOffsets() {
-    if (mode === MODES.CATALYSE) {
-        linearOffset = (linearOffset + deltaTime * offsetInc) % catalyseLoopDistance;
-    }
-    else if (mode === MODES.MOLT) {
-        linearOffset = (linearOffset + deltaTime * offsetInc) % moltLoopDistance;
-
-        dotLifetimePercentage = (linearOffset * layerDotInc) % moltLoopDistance;
-    }
-    else if (mode === MODES.AUDIT) {
-        const previous = linearOffset;
-        linearOffset = (linearOffset + deltaTime * offsetInc) % auditLoopDistance;
-        if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
-    }
-    else if (mode === MODES.MERGE) {
-        const previous = linearOffset;
-        linearOffset = (linearOffset + deltaTime * offsetInc) % mergeAnimDistance;
-        if (linearOffset < previous && mode !== queuedMode) setMode(queuedMode);
-        else {
-            mergeOffset = linearOffset < mergeSwitchDistance ?
-                segmentEase(0, mergeSwitchDistance, linearOffset, 0.2, 0)
-                : segmentEase(mergeSwitchDistance, mergeAnimDistance, linearOffset, 0.6, 0);
-        }
-
-        fadeInOpacity = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance, 0, 255);
-        mult = constrain(map(mergeOffset, 0, mergeAnimDistance, 32.1, 1), 1, 32.1); // (!) Forgotten magic
-
-        if (mergeOffset > mergeSwitchDistance) {
-            layerXOffset = -map(mergeOffset, 0, mergeAnimDistance, maxXOffset, minXOffset);
-            layerXOffset -= layerRadiusInc * (mult - 1);
-            dotDiameter = map(mergeOffset, mergeSwitchDistance, mergeAnimDistance,
-                                           switchDotDiameter, baseDotDiameter);
-        }
-        else layerXOffset = map(mergeOffset, 0, mergeAnimDistance, minXOffset, maxXOffset);
-    }
-}
-
 function setMode(newMode) {
     mode = newMode;
+    currentMode = modeMap.get(mode);
+    dotDiameter = baseDotDiameter;
     if (mode === MODES.CATALYSE) modeReset(maxCatalyseOffsetInc);
     else if (mode === MODES.AUDIT) {
         offsetInc = maxAuditOffsetInc;
@@ -336,6 +348,7 @@ function setMode(newMode) {
     }
     else if (mode === MODES.MERGE) {
         mergeOffset = 0;
+        layerXOffset = map(mergeOffset, 0, mergeAnimDistance, minXOffset, maxXOffset);
         modeReset(maxMergeOffsetInc);
     }
 
