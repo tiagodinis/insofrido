@@ -4,7 +4,7 @@ import {Interpolator, segmentEase} from '../p5/modules/Interpolator.js';
 let interpolator = new Interpolator();
 // Base parameters
 const MODES = Object.freeze({"CATALYSE":"Catalisar", "AUDIT":"Auditar", "MOLT":"Podar","MERGE":"Unir"});
-const INTERPS = Object.freeze({"TRANS_ACCEL":"TRANS_ACCEL","TRANS_DECEL":"TRANS_DECEL", "QUEUED_FONT":"QUEUED_FONT", "INTRO_FADE_OUT":"INTRO_FADE_OUT", "INTRO_FADE_IN":"INTRO_FADE_IN"});
+const INTERPS = Object.freeze({"TRANS_ACCEL":"TRANS_ACCEL","TRANS_DECEL":"TRANS_DECEL", "QUEUED_FONT":"QUEUED_FONT", "INTRO_FADE_OUT":"INTRO_FADE_OUT", "INTRO_FADE_IN":"INTRO_FADE_IN", "PSTART_FADE":"PSTART_FADE", "PSTART_FADE_OUT":"PSTART_FADE_OUT",});
 const SCREEN = Object.freeze({"NORMAL":"NORMAL", "SMALL_1":"SMALL_1", "SMALL_2":"SMALL_2",});
 let baseNrLayers, layerDotInc, layerDistance, baseDotDiameter, layerRadiusInc, oX, oY;
 // Base state
@@ -16,6 +16,10 @@ function preload() {
     font = loadFont('fonts/raleway/Raleway-Bold.ttf');
 
     createCanvas(0, 0);
+    let interp = interpolator.add(INTERPS.PSTART_FADE, 255, 0, 1000);
+    interp.onInterpolate = (i) => pressStartOpacity = i.value;
+    interp.iterations = 0;
+    interp.alternate = true;
 }
 
 function setup() { onResize(); }
@@ -92,6 +96,7 @@ function draw() {
 }
 
 let introOpacity = 255;
+let pressStartOpacity = 255;
 let started = false;
 function drawIntro() {
     fill(0, introOpacity);
@@ -99,20 +104,26 @@ function drawIntro() {
     textSize(64);
     text("E L I T E S", window.innerWidth * 0.5, window.innerHeight * 0.4);
     textSize(16);
-    fill(0, introOpacity);
+    fill(0, pressStartOpacity);
     text("Toca para começar", window.innerWidth * 0.5, window.innerHeight * 0.43);
 
     if (mouseIsPressed) {
-        let interp = interpolator.add(INTERPS.INTRO_FADE_OUT, 1, 0, 700);
-        interp.onInterpolate = (i) => introOpacity = lerp(0, 255, i.value);
+        // Fade out title, set mode and fade in the actual thing
+        let interp = interpolator.add(INTERPS.INTRO_FADE_OUT, 255, 0, 1000);
+        interp.onInterpolate = (i) => introOpacity = i.value;
         interp.onFinish = () => {
             started = true;
             cursor(ARROW);
             fill(0);
             setMode(MODES.CATALYSE);
-            let interp = interpolator.add(INTERPS.INTRO_FADE_IN, 0, 1, 1000);
-            interp.onInterpolate = (i) => introOpacity = lerp(0, 255, i.value);
+            let interp = interpolator.add(INTERPS.INTRO_FADE_IN, 0, 255, 1000);
+            interp.onInterpolate = (i) => introOpacity = i.value;
         }
+
+        // Fade out pressStart label from its current opacity
+        interpolator.delete(INTERPS.PSTART_FADE);
+        interpolator.add(INTERPS.PSTART_FADE_OUT, pressStartOpacity, 0, 1000)
+            .onInterpolate = (i) => pressStartOpacity = i.value;
     }
 }
 
