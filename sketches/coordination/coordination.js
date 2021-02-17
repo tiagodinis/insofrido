@@ -10,9 +10,9 @@
 
 // -------------------------------------------------------------------------------------------------
 
-import {Toggle} from '../modules/Utils.js';
-import {Interpolator} from '../modules/Interpolator.js';
-import {FSM, StateTransition} from '../modules/FSM.js';
+import {Toggle} from '../../scripts/modules/Utils.js';
+import {Interpolator} from '../../scripts/modules/Interpolator.js';
+import {FSM, StateTransition} from '../../scripts/modules/FSM.js';
 
 // Services
 let interpolator, fsm; // preload
@@ -47,7 +47,7 @@ let goBackArrow;
 function preload() {
     createCanvas(0, 0);
 
-    textFont(loadFont('fonts/raleway/Raleway-Bold.ttf'));
+    textFont(loadFont('../../fonts/raleway/Raleway-Bold.ttf'));
 
     quadrants = [new Quadrant('Centralized', 0, 0, createVector(255, 183, 186), hoveredDarkenMult),
                 new Quadrant('Hierarchical', 1, 0, createVector(120, 219, 251), hoveredDarkenMult),

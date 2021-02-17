@@ -1,4 +1,4 @@
-import {Interpolator, segmentEase} from '../p5/modules/Interpolator.js';
+import {Interpolator, segmentEase} from '../modules/Interpolator.js';
 
 // Services
 let interpolator = new Interpolator();
