@@ -56,6 +56,7 @@ export class Interpolation {
         this.isFinished = false;
         this.elapsed = 0;
         this.isReversing = this.reverse;
+        this.elapsedPercentage = 0;
         this.value = this.start;
     }
 
@@ -75,9 +76,9 @@ export class Interpolation {
         const delayedElapsed = this.elapsed - this.delay;
         if (delayedElapsed < 0) return; // ---
 
-        let elapsedPercentage = constrain(delayedElapsed / this.interval, 0, 1);
-        if (this.isReversing) elapsedPercentage = 1 - elapsedPercentage;
-        const easedPercentage = ease(elapsedPercentage, this.gain, this.bias);
+        this.elapsedPercentage = constrain(delayedElapsed / this.interval, 0, 1);
+        if (this.isReversing) this.elapsedPercentage = 1 - this.elapsedPercentage;
+        const easedPercentage = ease(this.elapsedPercentage, this.gain, this.bias);
         this.value = lerp(this.start, this.end, easedPercentage);
         if (this.onInterpolate) this.onInterpolate(this);
     }

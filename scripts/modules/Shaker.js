@@ -53,7 +53,7 @@ export class Shake {
     }
 
     compute() {
-        // (!) Must select sample based on elapsed percentage (instead of eased percentage)
+        // (!) Select sample with elapsed percentage (instead of eased percentage)
         const delayedElapsed = this.interp.elapsed - this.interp.delay;
         let elapsedInterpPercentage = constrain(delayedElapsed / this.interp.interval, 0, 1);
 
