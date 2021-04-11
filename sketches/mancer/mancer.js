@@ -44,7 +44,7 @@ function onResize() {
     inWindow = createVector(window.innerWidth, window.innerHeight);
     halfWindow = p5.Vector.mult(inWindow, 0.5);
     resizeCanvas(inWindow.x, inWindow.y);
-    camPos = createVector(halfWindow.x, halfWindow.y);;
+    camPos = createVector(halfWindow.x, halfWindow.y);
     squid = new Squid();
 }
 
