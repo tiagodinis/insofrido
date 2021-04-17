@@ -19,7 +19,10 @@ export class Shaker {
     update() {
         for (let [key, val] of this.shakeMap) {
             val.compute();
-            if (val.isFinished) this.shakeMap.delete(key);
+            if (val.isFinished) {
+                if (val.onFinish) val.onFinish(val);
+                this.shakeMap.delete(key);
+            }
         }
     }
 }
@@ -36,6 +39,7 @@ export class Shake {
         this.nrSamples = (duration / 1000) * frequency;
             // Manual setup
             this.onCompute = null;
+            this.onFinish = null;
         // State
         this.value = 0;
         this.isFinished = false;
