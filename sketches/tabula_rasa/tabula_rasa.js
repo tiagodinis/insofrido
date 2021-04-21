@@ -1,4 +1,4 @@
-import {Interpolator} from '../../scripts/modules/Interpolator.js';
+import {Interpolator, ease} from '../../scripts/modules/Interpolator.js';
 import {Shaker, Shake} from '../../scripts/modules/Shaker.js';
 import {FSM, StateTransition} from '../../scripts/modules/FSM.js';
 
@@ -13,6 +13,7 @@ const STATES = Object.freeze({
     "Idle":"IdleState",
     "Drag":"DragState",
     "Magnet":"MagnetState",
+    "EndPull":"EndPullState",
 });
 // State
 let camPos;
@@ -29,6 +30,7 @@ function preload() {
         [STATES.Idle, new IdleState()],
         [STATES.Drag, new DragState()],
         [STATES.Magnet, new MagnetState()],
+        [STATES.EndPull, new EndPullState()],
     ]);
     fsm = new FSM(stateMap, stateMap.get(STATES.Loading));
     interpolator = new Interpolator();
@@ -60,16 +62,14 @@ function onResize() {
     cHookedY = inWindow.y - cHeight + 1;
     controllerX = halfWindow.x - cWidth * 0.5;
     // State init
-    controllerY = -1;
-    controllerColor = cActiveColor;
     receiverY = receiverActiveY;
 
 // INTERACTION ON RESIZE
     // Parameters
     downConstraints = createVector(-1, receiverActiveY - cHeight * 1.2 + 1);
     // State init
-    previousCanvas = createGraphics(inWindow.x, inWindow.y);
-    currentCanvas = createGraphics(inWindow.x, inWindow.y);
+    previousCanvas = createGraphics(cWidth, inWindow.y);
+    currentCanvas = createGraphics(cWidth, inWindow.y);
     leftOverTarget = 0;
     magnetY = inWindow.y * 0.7;
     hoverArea = new HoverRect(
@@ -80,8 +80,8 @@ function onResize() {
     msgPainted = new Array(messages.length);
     msgMasks = new Array(messages.length);
     for (let i = 0; i < messages.length; ++i) {
-        msgPainted[i] = createGraphics(inWindow.x, inWindow.y);
-        msgMasks[i] = createGraphics(inWindow.x, inWindow.y);
+        msgPainted[i] = createGraphics(cWidth, inWindow.y);
+        msgMasks[i] = createGraphics(cWidth, inWindow.y);
 
         msgMasks[i].fill(0, 0, 0, 255);
         msgMasks[i].textSize(64);
@@ -89,7 +89,7 @@ function onResize() {
         let charYStart = halfWindow.y - ((messages[i].length - 2) * charYInc) * 0.5;
         for (let j = 0; j < messages[i].length; ++j) {
             msgMasks[i].text(messages[i][j],
-                halfWindow.x - msgMasks[i].textWidth(messages[i][j]) * 0.5,
+                cWidth * 0.5 - msgMasks[i].textWidth(messages[i][j]) * 0.5,
                 charYStart + j * charYInc);
         }
     }
@@ -109,17 +109,18 @@ function draw() {
 // -- MESSAGE --------------------------------------------------------------------------------------
 // Parameters
 const messages = [
-    Array.from("DISPÕE ALELO"),
-    Array.from("LONGE DE CASA"),
-    // Array.from("PARAM O PRELO"), Array.from("ENGOLE A BRASA"),
-    // Array.from("ARRANCA OCELO")
+    // Array.from("DISPÕE ALELO"),
+    // Array.from("LONGE DE CASA"),
+    // Array.from("PARAM O PRELO"),
+    // Array.from("ENGOLE A BRASA"),
+    Array.from("ARRANCA OCELO")
 ];
 const charYInc = 60;
 let msgMasks;
 const missAlpha = 20;
-const hitBaseAlpha = 40;
+const hitBaseAlpha = 30;
 const hitAlphaIncrement = 5;
-const lineElements = 50;
+const lineElements = 70;
 const circleDiameter = 4;
 let msgPainted;
 
@@ -129,13 +130,11 @@ function paintCanvas(sampleIndex) {
 
     msgPainted[sampleIndex].clear();
     msgPainted[sampleIndex].noStroke();
-    if (sampleIndex > 0) msgPainted[sampleIndex].copy(msgPainted[sampleIndex - 1], 0, 0, inWindow.x, inWindow.y, 0, 0, inWindow.x, inWindow.y);
+    if (sampleIndex > 0) msgPainted[sampleIndex].copy(msgPainted[sampleIndex - 1], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
     for (let i = 0; i < lineElements; ++i) {
         for (let j = 0; j < inWindow.y; ++j) {
-            const x = randomGaussian(halfWindow.x, 60);
-            if (abs(halfWindow.x - x) > cWidth * 0.5) continue; // ---
-            const pos = createVector(x, j);
+            const pos = createVector(randomGaussian(cWidth * 0.5, 60), j);
             const color = msgMasks[sampleIndex].get(pos.x, pos.y)[3] !== 0 ? white : black;
             msgPainted[sampleIndex].fill(color);
             msgPainted[sampleIndex].circle(pos.x, pos.y, circleDiameter);
@@ -158,10 +157,10 @@ function advanceCounter() {
     counter++;
     previousCanvas.clear();
     if (counter > 0)
-        previousCanvas.copy(msgPainted[counter - 1], 0, 0, inWindow.x, inWindow.y, 0, 0, inWindow.x, inWindow.y);
+        previousCanvas.copy(msgPainted[counter - 1], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
     if (counter < msgPainted.length) {
         currentCanvas.clear();
-        currentCanvas.copy(msgPainted[counter], 0, 0, inWindow.x, inWindow.y, 0, 0, inWindow.x, inWindow.y);
+        currentCanvas.copy(msgPainted[counter], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
     }
 }
 
@@ -177,9 +176,9 @@ class HoverRect {
         this.cMax = createVector(max(corner1.x, corner2.x), max(corner1.y, corner2.y));
     }
 
-    isMouseHovering() {
-        return mouseX > this.pos.x + this.cMin.x && mouseX < this.pos.x + this.cMax.x
-            && mouseY > this.pos.y + this.cMin.y && mouseY < this.pos.y + this.cMax.y;
+    isPointHovering(x, y) {
+        return x > this.pos.x + this.cMin.x && x < this.pos.x + this.cMax.x
+            && y > this.pos.y + this.cMin.y && y < this.pos.y + this.cMax.y;
     }
 }
 
@@ -248,6 +247,9 @@ class TitleState {
         }
 
         counter = -1;
+        controllerY = downConstraints.x;
+        controllerRot = 0;
+        controllerColor = cActiveColor;
         setNewScroll();
         advanceCounter();
     }
@@ -279,12 +281,12 @@ class TitleState {
 }
 
 class IdleState {
-    onEnter() {} // interp.onFinish = () => updateCanvas(msgMasks[0]);
+    onEnter() {}
     onExit() {}
     onUpdate() {
         drawThings(true);
 
-        if (hoverArea.isMouseHovering()) {
+        if (hoverArea.isPointHovering(mouseX, mouseY)) {
             if (mouseIsPressed) return new StateTransition(STATES.Drag);
             else cursor('grab');
         } else cursor(ARROW);
@@ -393,32 +395,143 @@ class MagnetState {
         interp.onFinish = () => {
             interp = interpolator.add("receiverReload", receiverInactiveY, receiverActiveY, 500, 0.6);
             interp.onInterpolate = (i) => receiverY = i.value;
-            interp.onFinish = () => {
-                interp = interpolator.add("controllerSetup", downConstraints.x - cHeight, downConstraints.x, 1000);
-                interp.onInterpolate = (i) => controllerY = i.value;
+            interp.onFinish = counter === msgPainted.length ? this.endSetup : this.setup;
+        }
+      }, waitTime);
+    }
+
+    setup() {
+        let interp = interpolator.add("controllerSetup", downConstraints.x - cHeight, downConstraints.x, 1000);
+        interp.onInterpolate = (i) => controllerY = i.value;
+        interp.onFinish = () => {
+            let shake = new Shake("controllerSetupShake", 2, 60, 300);
+            const startPos = createVector(camPos.x, camPos.y);
+            shake.onCompute = (s) => camPos = p5.Vector.add(startPos, s.value);
+            shaker.add(shake, interpolator);
+
+            setNewScroll();
+            fsm.transition(new StateTransition(STATES.Idle));
+        }
+    }
+
+    endSetup() {
+        let interp = interpolator.add("es1", 0, 1, 600);
+        interp.onInterpolate = (i) => {
+            controllerY = lerp(downConstraints.x - cHeight, downConstraints.x - 22, i.value);
+            controllerRot = lerp(0, -HALF_PI * 0.01, i.value);
+        }
+        interp.onFinish = () => {
+            let shake = new Shake("es1Shake", 2, 60, 300);
+            const startPos = createVector(camPos.x, camPos.y);
+            shake.onCompute = (s) => camPos = p5.Vector.add(startPos, s.value);
+            shaker.add(shake, interpolator);
+
+            setTimeout(() => {
+                interp = interpolator.add("es2", 0, 1, 1200, -0.7);
+                interp.onInterpolate = (i) => {
+                    controllerY = lerp(downConstraints.x - 22, downConstraints.x - 15, i.value);
+                    controllerRot = lerp(-HALF_PI * 0.01, -HALF_PI * 0.03, i.value);
+                }
                 interp.onFinish = () => {
-                    let shake = new Shake("controllerSetupShake", 2, 60, 300);
+                    shake = new Shake("es2Shake", 8, 60, 400);
                     const startPos = createVector(camPos.x, camPos.y);
                     shake.onCompute = (s) => camPos = p5.Vector.add(startPos, s.value);
                     shaker.add(shake, interpolator);
-
-                    if (counter === msgPainted.length) {
-                        let interp = interpolator.add("magnetFadeOut", 0, 255, 1000);
-                        interp.onInterpolate = (i) => { fadeCanvas.clear(); fadeCanvas.background(255, i.value); }
-                        interp.onFinish = () => {
-                            // TODO: is this necessary?
-                            fadeCanvas.clear();
-                            fadeCanvas.background(255, 0);
-                            fsm.transition(new StateTransition(STATES.Title));
-                        }
-                    } else {
-                        setNewScroll();
-                        fsm.transition(new StateTransition(STATES.Idle));
-                    }
-                };
-            }
+                    fsm.transition(new StateTransition(STATES.EndPull));
+                }
+            }, 600);
         }
-      }, waitTime);
+    }
+}
+
+const endPullEase = 0.5;
+const endPullRangeMult = 40;
+const blinkInterval = 1;
+class EndPullState {
+    onEnter() {
+        this.endPullMin = downConstraints.x - 15;
+        this.endPullMax = downConstraints.x - 5;
+        this.endPullRotMin = -HALF_PI * 0.03;
+        this.endPullRotMax = -HALF_PI * 0.05;
+        hoverArea.pos.y = controllerY;
+        controllerColor = cActiveColor;
+        this.dragging = false;
+        this.ripped = false;
+        this.elapsedBlink = 0;
+        this.blinkInterval = 1;
+    }
+    onExit() {}
+    onUpdate() {
+        drawThings(false);
+
+        if (this.ripped) return; // ---
+
+        this.elapsedBlink += deltaSeconds;
+        if (this.elapsedBlink > this.blinkInterval) {
+            this.elapsedBlink -= this.blinkInterval;
+            this.blinkInterval = random(0.1, 1.5);
+            controllerColor = controllerColor === cActiveColor ? cInactiveColor : cActiveColor;
+        }
+
+        let sinus = sin(-controllerRot);
+        let cosinus = cos(-controllerRot);
+        let x = mouseX - (hoverArea.pos.x + cWidth);
+        let y = mouseY - hoverArea.pos.y;
+        x = x * cosinus - y * sinus;
+        y = y * cosinus + x * sinus;
+        x += (hoverArea.pos.x + cWidth);
+        y += hoverArea.pos.y;
+
+        if (this.dragging) {
+            let offset = mouseY - this.startMouse;
+
+            let rangeVal = constrain(this.startController + offset / endPullRangeMult, this.endPullMin, this.endPullMax);
+            let oneP = (rangeVal - this.endPullMin) / (this.endPullMax - this.endPullMin);
+            controllerY = lerp(this.endPullMin, this.endPullMax, ease(oneP, endPullEase, 0));
+            controllerRot = lerp(this.endPullRotMin, this.endPullRotMax, ease(oneP, endPullEase, 0));
+            hoverArea.pos.y = controllerY;
+
+            if (oneP === 1) {
+                this.ripped = true;
+                cursor(ARROW);
+                controllerColor = cInactiveColor;
+
+                let shake = new Shake("ripShake", 15, 60, 700);
+                const startPos = createVector(camPos.x, camPos.y);
+                shake.onCompute = (s) => camPos = p5.Vector.add(startPos, s.value);
+                shaker.add(shake, interpolator);
+
+                let interp = interpolator.add("ripFall", 0, 1, 5000, -0.5);
+                interp.onInterpolate = (i) => {
+                    controllerY = lerp(this.endPullMax, inWindow.y, i.value);
+                    controllerRot = lerp(this.endPullRotMax, -HALF_PI * 0.6, i.value);
+                    fadeCanvas.clear();
+                    fadeCanvas.background(255, lerp(0, 255, i.value));
+                }
+                interp.onFinish = () => {
+                    fsm.transition(new StateTransition(STATES.Title));
+                }
+            } else if (!mouseIsPressed) {
+                this.dragging = false;
+                let resetStartPos = controllerY;
+                let resetStartRot = controllerRot;
+                interpolator.add("endPullResetPos", 0, 1, 400, 0.3).onInterpolate = (i) => {
+                    controllerY = lerp(resetStartPos, this.endPullMin, i.value);
+                    controllerRot = lerp(resetStartRot, this.endPullRotMin, i.value);
+                    hoverArea.pos.y = controllerY;
+                }
+            }
+        } else if (hoverArea.isPointHovering(x, y)) {
+            if (mouseIsPressed) {
+                this.dragging = true;
+                cursor('grabbing');
+                let twoP = (controllerY - this.endPullMin) / (this.endPullMax - this.endPullMin);
+                this.startController = lerp(this.endPullMin, this.endPullMax, ease(twoP, -endPullEase, 0));
+                this.startMouse = mouseY;
+                if (interpolator.has("endPullResetPos")) interpolator.delete("endPullResetPos");
+            }
+            else cursor('grab');
+        } else cursor(ARROW);
     }
 }
 
@@ -439,6 +552,7 @@ let cHookedY;
 let controllerX;
 // State
 let controllerY;
+let controllerRot;
 let controllerColor;
 let receiverY;
 
@@ -446,11 +560,18 @@ function drawThings(splitVersion) {
     translate(camPos.x, camPos.y);
 
     if (splitVersion) {
-        image(currentCanvas, 0, 0, inWindow.x, controllerY, 0, 0, inWindow.x, controllerY);
-        image(previousCanvas, 0, controllerY, inWindow.x, inWindow.y, 0, controllerY, inWindow.x, inWindow.y);
-    } else image(previousCanvas, 0, 0, inWindow.x, inWindow.y, 0, 0, inWindow.x, inWindow.y);
+        image(currentCanvas, controllerX, 0, cWidth, controllerY, 0, 0, cWidth, controllerY);
+        image(previousCanvas, controllerX, controllerY, cWidth, inWindow.y, 0, controllerY, cWidth, inWindow.y);
+    } else image(previousCanvas, controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
     drawReceiverAndController();
+
+    // push();
+    // translate(hoverArea.pos.x + cWidth, hoverArea.pos.y);
+    // rotate(controllerRot);
+    // translate(-cWidth, 0);
+    // rect(0, 0, cWidth, cHeight);
+    // pop();
 }
 
 function drawReceiverAndController() {
@@ -472,7 +593,9 @@ function drawReceiverAndController() {
 
     // Controller
     push();
-    translate(halfWindow.x - cWidth * 0.5, controllerY);
+    translate(controllerX + cWidth, controllerY);
+    rotate(controllerRot);
+    translate(-cWidth, 0);
         // Outline
         beginShape();
         vertex(0, 0);
@@ -521,10 +644,6 @@ window.setup = setup;
 window.draw = draw;
 
 // TODOs
-// Improved outro: crooked controller that breaks when dragged to give way to title
-// Performance: canvas only need controllerX width (+ margin for circle?)
-// Play with distribution
-// Play with dotting elements
+// Check firefox loading problems\
 // Finish poem
-// Slower controller maxSpeed
 // Resizing considerations
