@@ -75,7 +75,8 @@ function onResize() {
         msgList[i] = createGraphics(cWidth, inWindow.y);
         msgMaskList[i] = createGraphics(cWidth, inWindow.y);
 
-        msgMaskList[i].fill(0, 0, 0, 255);
+        msgMaskList[i].background(255);
+        msgMaskList[i].fill(0);
         msgMaskList[i].textSize(charSize);
         
         let charYStart = halfWindow.y - ((messages[i].length - 2) * charLHeight) * 0.5;
@@ -239,13 +240,13 @@ class HoverRect {
 // -- MESSAGE --------------------------------------------------------------------------------------
 // Parameters
 const messages = [
-    Array.from("DISPÕE ALELO"),
-    Array.from("LONGE DE CASA"),
-    Array.from("ASTRO BELO"),
+    // Array.from("DISPÕE ALELO"),
+    // Array.from("LONGE DE CASA"),
+    // Array.from("ASTRO BELO"),
     Array.from("ENGOLE A BRASA"),
-    Array.from("RUI CASTELO"),
-    Array.from("O PODRE VAZA"),
-    Array.from("ARRANCA OCELO")
+    // Array.from("RUI CASTELO"),
+    // Array.from("O PODRE VAZA"),
+    // Array.from("ARRANCA OCELO")
 ];
 let charSize, charLHeight, gaussDeviation, lineElements, circleDiameter, missAlpha, hitBaseAlpha,
     hitAlphaIncrement, msgList, msgMaskList;
@@ -259,7 +260,7 @@ function preloadMessage(sampleIndex) {
     if (sampleIndex > 0) msgList[sampleIndex].copy(msgList[sampleIndex - 1], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
     msgMaskList[sampleIndex].loadPixels();
-    console.log(msgMaskList[sampleIndex].pixels[4 * (inWindow.y * cWidth) - 1]);
+    // console.log(msgMaskList[sampleIndex].pixels[4 * (inWindow.y * cWidth) - 1]);
     for (let i = 0; i < lineElements; ++i) {
         for (let y = 0; y < inWindow.y; ++y) {
             const x = constrain(round(randomGaussian(cWidth * 0.5, gaussDeviation)), 0, cWidth);
@@ -267,15 +268,19 @@ function preloadMessage(sampleIndex) {
             // msgList[sampleIndex].fill(msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3]);
             // msgList[sampleIndex].circle(x, y, circleDiameter);
 
-            if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== undefined){
-                msgList[sampleIndex].fill(black);
-                msgList[sampleIndex].circle(x, y, circleDiameter);
-            }
+            // if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== undefined){
+            //     msgList[sampleIndex].fill(black);
+            //     msgList[sampleIndex].circle(x, y, circleDiameter);
+            // }
 
             // if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0){
             //     msgList[sampleIndex].fill(black);
             //     msgList[sampleIndex].circle(x, y, circleDiameter);
             // }
+
+            const isMaskHit = msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth)] !== 255;
+            msgList[sampleIndex].fill(isMaskHit ? white : black);
+            msgList[sampleIndex].circle(x, y, circleDiameter);
 
             // const isMaskHit = msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0;
             // msgList[sampleIndex].fill(isMaskHit ? white : black);
