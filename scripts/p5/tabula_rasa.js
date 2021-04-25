@@ -267,11 +267,13 @@ function preloadMessage(sampleIndex) {
     msgList[sampleIndex].noStroke();
     if (sampleIndex > 0) msgList[sampleIndex].copy(msgList[sampleIndex - 1], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
+    // console.log(lineElements * inWindow.y * pDensity);
+
     msgMaskList[sampleIndex].loadPixels();
     for (let i = 0; i < lineElements; ++i) {
         for (let y = 0; y < inWindow.y; ++y) {
             const x = constrain(round(randomGaussian(cWidth * 0.5, gaussDeviation)), 0, cWidth);
-            const isMaskHit = msgMaskList[sampleIndex].pixels[(4 * (x + y * cWidth) + 3) * pDensity] !== 0;
+            const isMaskHit = msgMaskList[sampleIndex].pixels[(4 * (x + y * cWidth) * pDensity + 3)] !== 0;
             msgList[sampleIndex].fill(isMaskHit ? white : black);
             msgList[sampleIndex].circle(x, y, circleDiameter);
         }
