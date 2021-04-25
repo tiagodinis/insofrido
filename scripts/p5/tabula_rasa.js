@@ -1,6 +1,6 @@
-import {Interpolator, ease} from '../../scripts/modules/Interpolator.js';
-import {Shaker, Shake} from '../../scripts/modules/Shaker.js';
-import {FSM, StateTransition} from '../../scripts/modules/FSM.js';
+import {Interpolator, ease} from '../modules/Interpolator.js';
+import {Shaker, Shake} from '../modules/Shaker.js';
+import {FSM, StateTransition} from '../modules/FSM.js';
 
 // Services
 let fsm, interpolator, shaker;
@@ -239,12 +239,12 @@ class HoverRect {
 // -- MESSAGE --------------------------------------------------------------------------------------
 // Parameters
 const messages = [
-    // Array.from("DISPÕE ALELO"),
+    Array.from("DISPÕE ALELO"),
     Array.from("LONGE DE CASA"),
-    // Array.from("ASTRO BELO"),
-    // Array.from("ENGOLE A BRASA"),
-    // Array.from("RUI CASTELO"),
-    // Array.from("O PODRE VAZA"),
+    Array.from("ASTRO BELO"),
+    Array.from("ENGOLE A BRASA"),
+    Array.from("RUI CASTELO"),
+    Array.from("O PODRE VAZA"),
     Array.from("ARRANCA OCELO")
 ];
 let charSize, charLHeight, gaussDeviation, lineElements, circleDiameter, missAlpha, hitBaseAlpha,
