@@ -17,7 +17,8 @@ function preload() {
     ralewayFont = loadFont('../../fonts/raleway/Raleway-Bold.ttf');
 }
 
-function setup() { 
+function setup() {
+    pixelDensity(1);
     textFont(ralewayFont);
     onResize();
 }
@@ -117,10 +118,10 @@ function draw() {
     fsm.update();
     image(fadeCanvas, 0, 0);
 
-    push();
-    textSize(64);
-    text(pixelDensity(), halfWindow.x, halfWindow.y);
-    pop();
+    // push();
+    // textSize(64);
+    // text(pixelDensity(), halfWindow.x, halfWindow.y);
+    // pop();
 
 
     interpolator.update();
