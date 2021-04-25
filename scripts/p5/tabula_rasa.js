@@ -95,7 +95,7 @@ function onResize() {
 
     endPullRotMin = lerp(-HALF_PI * 0.04, -HALF_PI * 0.03, dimP.x);
     endPullRotMax = lerp(-HALF_PI * 0.08, -HALF_PI * 0.06, dimP.x);
-    endPullRangeMult = round(lerp(25, 40, dimP.y));
+    endPullRangeMult = round(lerp(35, 55, dimP.y));
 
     let stateMap = new Map([
         [STATES.Loading, new LoadingState("T Á B U L A   R A S A")],
@@ -266,8 +266,6 @@ function preloadMessage(sampleIndex) {
     msgList[sampleIndex].clear();
     msgList[sampleIndex].noStroke();
     if (sampleIndex > 0) msgList[sampleIndex].copy(msgList[sampleIndex - 1], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
-
-    // console.log(lineElements * inWindow.y * pDensity);
 
     msgMaskList[sampleIndex].loadPixels();
     for (let i = 0; i < lineElements; ++i) {
@@ -489,7 +487,7 @@ class MagnetState {
         interp.onInterpolate = (i) => controllerY = i.value;
         interp.onFinish = () => {
             interpolator.add("hookOvershoot", 0, 1, 300).onFinish = () => {
-                controllerY = cHookedY + 2;
+                controllerY = cHookedY + 1;
                 receiverY = receiverInactiveY;
                 interpolator.add("hookResolve", 0, 1, 60).onFinish = () => {
                     controllerY = cHookedY;
