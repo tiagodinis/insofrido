@@ -263,10 +263,12 @@ function preloadMessage(sampleIndex) {
         for (let y = 0; y < inWindow.y; ++y) {
             const x = constrain(round(randomGaussian(cWidth * 0.5, gaussDeviation)), 0, cWidth);
             msgList[sampleIndex].fill(black);
-            if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0){
-                msgList[sampleIndex].circle(x, y, circleDiameter);
+            msgList[sampleIndex].circle(x, y, circleDiameter);
 
-            }
+            // if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0){
+            //     msgList[sampleIndex].circle(x, y, circleDiameter);
+
+            // }
             // const isMaskHit = msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0;
             // msgList[sampleIndex].fill(isMaskHit ? white : black);
             // msgList[sampleIndex].circle(x, y, circleDiameter);
