@@ -129,10 +129,12 @@ let controllerY, controllerRot, controllerColor, receiverY;
 function drawThings(splitVersion) {
     translate(camPos.x, camPos.y);
 
-    if (splitVersion) {
-        image(currentCanvas, controllerX, 0, cWidth, controllerY, 0, 0, cWidth, controllerY);
-        image(previousCanvas, controllerX, controllerY, cWidth, inWindow.y, 0, controllerY, cWidth, inWindow.y);
-    } else image(previousCanvas, controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
+    // if (splitVersion) {
+    //     image(currentCanvas, controllerX, 0, cWidth, controllerY, 0, 0, cWidth, controllerY);
+    //     image(previousCanvas, controllerX, controllerY, cWidth, inWindow.y, 0, controllerY, cWidth, inWindow.y);
+    // } else image(previousCanvas, controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
+
+    image(msgMaskList[0], controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
     drawReceiverAndController();
 }
