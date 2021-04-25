@@ -259,16 +259,24 @@ function preloadMessage(sampleIndex) {
     if (sampleIndex > 0) msgList[sampleIndex].copy(msgList[sampleIndex - 1], 0, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
     msgMaskList[sampleIndex].loadPixels();
+    console.log(msgMaskList[sampleIndex].pixels[4 * (inWindow.y * cWidth) - 1]);
     for (let i = 0; i < lineElements; ++i) {
         for (let y = 0; y < inWindow.y; ++y) {
             const x = constrain(round(randomGaussian(cWidth * 0.5, gaussDeviation)), 0, cWidth);
-            msgList[sampleIndex].fill(msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3]);
-            msgList[sampleIndex].circle(x, y, circleDiameter);
+
+            // msgList[sampleIndex].fill(msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3]);
+            // msgList[sampleIndex].circle(x, y, circleDiameter);
+
+            if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== undefined){
+                msgList[sampleIndex].fill(black);
+                msgList[sampleIndex].circle(x, y, circleDiameter);
+            }
 
             // if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0){
+            //     msgList[sampleIndex].fill(black);
             //     msgList[sampleIndex].circle(x, y, circleDiameter);
-
             // }
+
             // const isMaskHit = msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0;
             // msgList[sampleIndex].fill(isMaskHit ? white : black);
             // msgList[sampleIndex].circle(x, y, circleDiameter);
