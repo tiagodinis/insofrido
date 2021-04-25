@@ -129,12 +129,10 @@ let controllerY, controllerRot, controllerColor, receiverY;
 function drawThings(splitVersion) {
     translate(camPos.x, camPos.y);
 
-    // if (splitVersion) {
-    //     image(currentCanvas, controllerX, 0, cWidth, controllerY, 0, 0, cWidth, controllerY);
-    //     image(previousCanvas, controllerX, controllerY, cWidth, inWindow.y, 0, controllerY, cWidth, inWindow.y);
-    // } else image(previousCanvas, controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
-
-    image(msgMaskList[0], controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
+    if (splitVersion) {
+        image(currentCanvas, controllerX, 0, cWidth, controllerY, 0, 0, cWidth, controllerY);
+        image(previousCanvas, controllerX, controllerY, cWidth, inWindow.y, 0, controllerY, cWidth, inWindow.y);
+    } else image(previousCanvas, controllerX, 0, cWidth, inWindow.y, 0, 0, cWidth, inWindow.y);
 
     drawReceiverAndController();
 }
@@ -264,9 +262,14 @@ function preloadMessage(sampleIndex) {
     for (let i = 0; i < lineElements; ++i) {
         for (let y = 0; y < inWindow.y; ++y) {
             const x = constrain(round(randomGaussian(cWidth * 0.5, gaussDeviation)), 0, cWidth);
-            const isMaskHit = msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0;
-            msgList[sampleIndex].fill(isMaskHit ? white : black);
-            msgList[sampleIndex].circle(x, y, circleDiameter);
+            msgList[sampleIndex].fill(black);
+            if (msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0){
+                msgList[sampleIndex].circle(x, y, circleDiameter);
+
+            }
+            // const isMaskHit = msgMaskList[sampleIndex].pixels[4 * (x + y * cWidth) + 3] !== 0;
+            // msgList[sampleIndex].fill(isMaskHit ? white : black);
+            // msgList[sampleIndex].circle(x, y, circleDiameter);
         }
     }
 }
@@ -296,7 +299,6 @@ class LoadingState {
     onUpdate() {
         if (this.sampled === msgList.length - 1) fsm.transition(new StateTransition(STATES.Title));
 
-        // paint
         preloadMessage(this.sampled);
         this.sampled++;
 
