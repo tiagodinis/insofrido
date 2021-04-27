@@ -113,16 +113,9 @@ function onResize() {
 function draw() {
     deltaSeconds = deltaTime / 1000;
 
-
     background(255);
     fsm.update();
     image(fadeCanvas, 0, 0);
-
-    // push();
-    // textSize(64);
-    // text(pixelDensity(), halfWindow.x, halfWindow.y);
-    // pop();
-
 
     interpolator.update();
     shaker.update();
