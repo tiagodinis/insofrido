@@ -1,22 +1,17 @@
-import {Interpolator} from '../../scripts/modules/Interpolator.js';
-
 // Services
-let interpolator;
 // Parameters
-let inWindow, halfWindow, fontSize; // onResize
-let ralewayFont;
+let inWindow, halfWindow;
+let ralewayFont, fontSize;
 // State
 
 function preload() {
     ralewayFont = loadFont('../../fonts/raleway/Raleway-Bold.ttf')
-    interpolator = new Interpolator();
 }
-
+window.addEventListener("resize", onResize);
 function setup() { 
     textFont(ralewayFont);
     onResize();
 }
-window.addEventListener("resize", onResize);
 function onResize() {
     inWindow = createVector(window.innerWidth, window.innerHeight);
     halfWindow = p5.Vector.mult(inWindow, 0.5);
