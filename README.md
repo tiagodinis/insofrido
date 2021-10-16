@@ -1,4 +1,4 @@
-Written & interactive poetry. Live at <insofrido.com>.
+Written & interactive poetry. Live at https://insofrido.com.
 
 This was my first website. First time touching HTML, CSS and JS, and making something available online.
 
